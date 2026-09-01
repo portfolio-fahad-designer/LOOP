@@ -1,93 +1,151 @@
-import React, { useState } from 'react';
-import { ScreenType, Post, Comment } from '../../types';
-import { currentUser } from '../../data/mockData';
+import React, { useState, useRef } from 'react';
+import { ScreenType, Post } from '../../types';
+import { useApp } from '../../context/AppContext';
+import { StoryViewer } from '../StoryViewer';
 
 interface GroupFeedScreenProps {
-  posts: Post[];
-  onAddPost: (post: Post) => void;
-  onVotePoll: (postId: string, optionId: string) => void;
-  onAddComment: (postId: string, text: string) => void;
-  onToggleReaction: (postId: string, emoji: string) => void;
   onNavigate: (screen: ScreenType) => void;
   onOpenCreate: () => void;
 }
 
 export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
-  posts,
-  onAddPost,
-  onVotePoll,
-  onAddComment,
-  onToggleReaction,
   onNavigate,
   onOpenCreate,
 }) => {
+  const {
+    currentUser,
+    currentSquad,
+    allSquads,
+    switchSquad,
+    posts,
+    stories,
+    addPost,
+    deletePost,
+    toggleReaction,
+    votePoll,
+    addComment,
+    likeComment,
+    showToast,
+  } = useApp();
+
   const [newPostText, setNewPostText] = useState('');
-  const [activeCommentPost, setActiveCommentPost] = useState<Post | null>(null);
+  const [attachedImage, setAttachedImage] = useState<string>('');
+  const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState('');
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [storyViewerIndex, setStoryViewerIndex] = useState<number | null>(null);
+  const [showSquadSelector, setShowSquadSelector] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const activeCommentPost = posts.find((p) => p.id === activeCommentPostId);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAttachedImage(reader.result);
+          showToast('Image attached to post');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleCreateQuickPost = () => {
-    if (!newPostText.trim()) return;
+    if (!newPostText.trim() && !attachedImage) return;
     const post: Post = {
       id: `p-${Date.now()}`,
       author: currentUser,
       timeAgo: 'Just now',
       content: newPostText.trim(),
-      reactions: [{ emoji: '🎉', count: 1, active: true }],
+      imageUrl: attachedImage || undefined,
+      reactions: [{ emoji: '🔥', count: 1, active: true }],
       commentsCount: 0,
       commentsList: [],
     };
-    onAddPost(post);
+    addPost(post);
     setNewPostText('');
+    setAttachedImage('');
   };
 
   const handlePostCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeCommentPost || !commentInput.trim()) return;
-    onAddComment(activeCommentPost.id, commentInput.trim());
+    if (!activeCommentPostId || !commentInput.trim()) return;
+    addComment(activeCommentPostId, commentInput.trim());
     setCommentInput('');
   };
 
   return (
     <div className="bg-[#050505] text-[#F2F2F2] min-h-screen pb-32">
-      {/* TopAppBar */}
-      <header className="bg-[#050505]/95 backdrop-blur-lg fixed top-10 left-0 w-full z-40 border-b border-[#262626] h-16 flex items-center">
-        <div className="flex justify-between items-center px-5 w-full max-w-4xl mx-auto">
-          <button
-            onClick={() => onNavigate('landing')}
-            className="text-[#999999] hover:text-[#F2F2F2] transition-colors p-2 rounded-full flex items-center justify-center cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[20px]" data-icon="arrow_back">arrow_back</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <h1 className="font-black text-xl text-[#F2F2F2] tracking-tighter uppercase">
-              THE SQUAD
-            </h1>
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#888888] bg-[#141414] border border-[#262626] px-2 py-0.5 rounded-full">
-              LIVE FEED
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onNavigate('members')}
-              className="text-[#999999] hover:text-[#F2F2F2] transition-colors p-2 rounded-full flex items-center justify-center cursor-pointer"
-              title="Group Members"
-            >
-              <span className="material-symbols-outlined text-[20px]" data-icon="group">group</span>
-            </button>
-            <button
-              onClick={() => onNavigate('settings')}
-              className="text-[#999999] hover:text-[#F2F2F2] transition-colors p-2 rounded-full flex items-center justify-center cursor-pointer"
-              title="Group Settings"
-            >
-              <span className="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* Main Feed Canvas */}
-      <main className="pt-28 px-4 max-w-2xl mx-auto flex flex-col gap-5">
+      <main className="pt-20 md:pt-24 px-4 max-w-2xl mx-auto flex flex-col gap-6">
+        {/* Horizontal Stories / Loops Row */}
+        <section className="bold-card rounded-2xl p-4 border border-[#262626] bg-[#0d0d0d]">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#F2F2F2] animate-pulse"></span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#888888] font-mono">
+                SQUAD LOOPS &amp; MOMENTS
+              </span>
+            </div>
+            <button
+              onClick={onOpenCreate}
+              className="text-[10px] font-black uppercase tracking-wider text-[#AAAAAA] hover:text-white flex items-center gap-1 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[13px]">add</span> Add Story
+            </button>
+          </div>
+
+          <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
+            {/* Create your own story button */}
+            <button
+              onClick={onOpenCreate}
+              className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+            >
+              <div className="w-14 h-14 rounded-full border-2 border-dashed border-[#555555] group-hover:border-white flex items-center justify-center bg-[#141414] transition-all relative">
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full rounded-full object-cover opacity-50" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-white text-xl">add</span>
+                </div>
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-tight text-[#888888] group-hover:text-white">Your Loop</span>
+            </button>
+
+            {/* Stories */}
+            {stories.map((st, idx) => (
+              <button
+                key={st.id}
+                onClick={() => setStoryViewerIndex(idx)}
+                className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+              >
+                <div className={`w-14 h-14 rounded-full p-0.5 transition-all ${
+                  st.seen ? 'border border-[#333333]' : 'border-2 border-white shadow-[0_0_12px_rgba(255,255,255,0.3)]'
+                }`}>
+                  <img
+                    src={st.user.avatar}
+                    alt={st.user.name}
+                    className="w-full h-full rounded-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-tight text-[#CCCCCC] group-hover:text-white max-w-[60px] truncate">
+                  {st.user.name.split(' ')[0]}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Hidden File Picker */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          accept="image/*"
+          className="hidden"
+        />
+
         {/* Post Creation Input Area */}
         <section className="bold-card rounded-2xl p-5 border border-[#262626] bg-[#0d0d0d]">
           <div className="flex gap-3.5 items-start">
@@ -95,32 +153,46 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
               <img
                 className="w-full h-full object-cover"
                 alt={currentUser.name}
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB58VRxD4QiynTFEpAWyC-PWO5YlBwvRkJgTMdOWxH-w23Mzq9G1364NXRB5SO-r2nbEqhnuF_tG2jwiFejzN-k5-XhwYbPyciDuCPASjeKYT9GUd_wm5vvBFNDQeUA9sncu3tZZ43XPyFc-Q-HlCdnvbyU0K3u11uLHJG0ZflRjcsGSVCbcAWReSxU63qZsLmb7x6xkZxrSKqlVwtsN36yg_A5w12kb7TZKyeWAml2F1U_SCY6PnQ"
+                src={currentUser.avatar}
               />
             </div>
             <div className="flex-1">
               <textarea
                 value={newPostText}
                 onChange={(e) => setNewPostText(e.target.value)}
-                className="w-full bg-[#141414] border border-[#262626] rounded-xl p-3.5 text-sm text-[#F2F2F2] placeholder:text-[#666666] focus:border-[#666666] focus:outline-none transition-all resize-none font-sans"
-                placeholder="Drop a note, update, or question for The Squad..."
+                className="w-full bg-[#141414] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] placeholder:text-[#666666] focus:border-[#666666] focus:outline-none transition-all resize-none font-sans leading-relaxed"
+                placeholder={`Drop an update or idea for ${currentSquad.name}...`}
                 rows={2}
               />
+
+              {/* Preview attached image */}
+              {attachedImage && (
+                <div className="relative h-28 w-full rounded-xl overflow-hidden border border-[#333333] mt-2">
+                  <img src={attachedImage} alt="Attachment" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => setAttachedImage('')}
+                    className="absolute top-2 right-2 p-1 bg-black/80 rounded-full text-white hover:bg-black"
+                  >
+                    <span className="material-symbols-outlined text-xs">close</span>
+                  </button>
+                </div>
+              )}
+
               <div className="flex justify-between items-center mt-3 pt-2.5 border-t border-[#222222]">
                 <div className="flex gap-1.5">
                   <button
-                    onClick={onOpenCreate}
+                    onClick={() => fileInputRef.current?.click()}
                     className="p-2 text-[#AAAAAA] hover:text-[#F2F2F2] hover:bg-[#1a1a1a] rounded-full transition-colors flex items-center justify-center cursor-pointer"
-                    title="Add Image"
+                    title="Upload Image"
                   >
-                    <span className="material-symbols-outlined text-[18px]" data-icon="image">image</span>
+                    <span className="material-symbols-outlined text-[18px]">image</span>
                   </button>
                   <button
                     onClick={onOpenCreate}
                     className="p-2 text-[#AAAAAA] hover:text-[#F2F2F2] hover:bg-[#1a1a1a] rounded-full transition-colors flex items-center justify-center cursor-pointer"
                     title="Create Poll"
                   >
-                    <span className="material-symbols-outlined text-[18px]" data-icon="poll">poll</span>
+                    <span className="material-symbols-outlined text-[18px]">poll</span>
                   </button>
                   <button
                     onClick={() => {
@@ -129,14 +201,14 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                     className="p-2 text-[#AAAAAA] hover:text-[#F2F2F2] hover:bg-[#1a1a1a] rounded-full transition-colors flex items-center justify-center cursor-pointer"
                     title="Add Emoji"
                   >
-                    <span className="material-symbols-outlined text-[18px]" data-icon="gif_box">gif_box</span>
+                    <span className="material-symbols-outlined text-[18px]">add_reaction</span>
                   </button>
                 </div>
                 <button
                   onClick={handleCreateQuickPost}
-                  disabled={!newPostText.trim()}
+                  disabled={!newPostText.trim() && !attachedImage}
                   className={`font-black text-[11px] uppercase tracking-widest px-6 py-2 rounded-full transition-all duration-200 ${
-                    newPostText.trim()
+                    newPostText.trim() || attachedImage
                       ? 'bg-[#F2F2F2] text-[#050505] hover:bg-white active:scale-95 cursor-pointer shadow-[0_0_16px_rgba(255,255,255,0.2)]'
                       : 'bg-[#1a1a1a] text-[#555555] cursor-not-allowed border border-[#222222]'
                   }`}
@@ -179,19 +251,25 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                     POLL
                   </span>
                 )}
-                <button className="text-[#777777] hover:text-[#F2F2F2] p-1 rounded-full cursor-pointer">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="more_horiz">more_horiz</span>
-                </button>
+                {post.author.id === currentUser.id && (
+                  <button
+                    onClick={() => deletePost(post.id)}
+                    className="text-[#666666] hover:text-[#ff4444] p-1 rounded-full cursor-pointer transition-colors"
+                    title="Delete Post"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                  </button>
+                )}
               </div>
             </div>
 
             {/* Content Body */}
             <div>
-              <p className="font-body text-sm sm:text-base text-[#E0E0E0] leading-relaxed mb-3">
+              <p className="font-body text-xs sm:text-sm text-[#E0E0E0] leading-relaxed mb-3">
                 {post.content}
               </p>
 
-              {/* Photo attachment if available */}
+              {/* Photo attachment */}
               {post.imageUrl && (
                 <div 
                   onClick={() => setLightboxImage(post.imageUrl!)}
@@ -199,7 +277,7 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                 >
                   <img
                     className="w-full h-auto max-h-[340px] object-cover transition-transform duration-500 group-hover:scale-102"
-                    alt="Post photo"
+                    alt="Post visual"
                     src={post.imageUrl}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/80 to-transparent flex items-end p-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -210,7 +288,7 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                 </div>
               )}
 
-              {/* Poll Interface if available */}
+              {/* Poll Interface */}
               {post.poll && (
                 <div className="flex flex-col gap-2 mb-3 bg-[#121212] p-4 rounded-xl border border-[#262626]">
                   {post.poll.options.map((opt) => {
@@ -221,7 +299,7 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                     return (
                       <button
                         key={opt.id}
-                        onClick={() => onVotePoll(post.id, opt.id)}
+                        onClick={() => votePoll(post.id, opt.id)}
                         className={`relative w-full border rounded-xl p-3.5 flex justify-between items-center overflow-hidden transition-all text-left group cursor-pointer ${
                           isVoted
                             ? 'border-[#F2F2F2] bg-[#1c1c1c]'
@@ -249,18 +327,17 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                   })}
                   <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-wider text-[#777777] mt-1 pt-1 border-t border-[#222222]">
                     <span>{post.poll.totalVotes} votes total</span>
-                    <span>Ends: {post.poll.endsIn}</span>
+                    <span>Ends in: {post.poll.endsIn}</span>
                   </div>
                 </div>
               )}
 
               {/* Reactions and Comments Bar */}
               <div className="flex items-center gap-2.5 mt-2 text-[#888888] pt-2 border-t border-[#1e1e1e]">
-                {/* Emoji reactions */}
                 {post.reactions?.map((r, i) => (
                   <button
                     key={i}
-                    onClick={() => onToggleReaction(post.id, r.emoji)}
+                    onClick={() => toggleReaction(post.id, r.emoji)}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer ${
                       r.active
                         ? 'bg-[#222222] border-[#555555] text-[#F2F2F2]'
@@ -274,23 +351,30 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
 
                 {/* Quick Add Reaction buttons */}
                 <button
-                  onClick={() => onToggleReaction(post.id, '❤️')}
+                  onClick={() => toggleReaction(post.id, '❤️')}
                   className="hover:scale-125 transition-transform p-1 text-xs opacity-70 hover:opacity-100 cursor-pointer"
                   title="Love"
                 >
                   ❤️
                 </button>
                 <button
-                  onClick={() => onToggleReaction(post.id, '⚡')}
+                  onClick={() => toggleReaction(post.id, '⚡')}
                   className="hover:scale-125 transition-transform p-1 text-xs opacity-70 hover:opacity-100 cursor-pointer"
                   title="Energy"
                 >
                   ⚡
                 </button>
+                <button
+                  onClick={() => toggleReaction(post.id, '🔥')}
+                  className="hover:scale-125 transition-transform p-1 text-xs opacity-70 hover:opacity-100 cursor-pointer"
+                  title="Fire"
+                >
+                  🔥
+                </button>
 
                 {/* Comments trigger */}
                 <button
-                  onClick={() => setActiveCommentPost(post)}
+                  onClick={() => setActiveCommentPostId(post.id)}
                   className="flex items-center gap-1.5 hover:text-[#F2F2F2] transition-colors text-xs font-black uppercase tracking-wider ml-auto p-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[16px]">chat_bubble_outline</span>
@@ -301,7 +385,7 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                 <button
                   onClick={() => {
                     navigator.clipboard?.writeText(window.location.href);
-                    alert('Link to post copied to clipboard!');
+                    showToast('Link to post copied');
                   }}
                   className="flex items-center hover:text-[#F2F2F2] transition-colors p-1 cursor-pointer"
                   title="Share Post"
@@ -318,18 +402,18 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
       {lightboxImage && (
         <div 
           onClick={() => setLightboxImage(null)}
-          className="fixed inset-0 z-[90] bg-[#050505]/95 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-[90] bg-[#050505]/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
         >
           <div className="relative max-w-2xl max-h-[85vh]">
             <button
               onClick={() => setLightboxImage(null)}
-              className="absolute top-4 right-4 p-2 bg-[#141414] border border-[#333333] rounded-full text-[#F2F2F2] hover:bg-white hover:text-black cursor-pointer"
+              className="absolute top-4 right-4 p-2 bg-[#141414] border border-[#333333] rounded-full text-[#F2F2F2] hover:bg-white hover:text-black cursor-pointer z-10"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
             <img
               src={lightboxImage}
-              alt="Expanded post visual"
+              alt="Expanded visual"
               className="rounded-2xl max-h-[80vh] object-contain border border-[#333333] shadow-2xl"
             />
           </div>
@@ -339,8 +423,8 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
       {/* Comments Drawer / Modal */}
       {activeCommentPost && (
         <div 
-          onClick={() => setActiveCommentPost(null)}
-          className="fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setActiveCommentPostId(null)}
+          className="fixed inset-0 z-[85] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -348,18 +432,18 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
           >
             <div className="p-4 border-b border-[#262626] flex items-center justify-between bg-[#121212]">
               <div>
-                <h4 className="font-black text-sm uppercase tracking-tight text-[#F2F2F2]">
+                <h4 className="font-black text-xs uppercase tracking-tight text-[#F2F2F2]">
                   Thread Responses ({activeCommentPost.commentsCount})
                 </h4>
-                <p className="text-xs text-[#888888] truncate max-w-xs font-mono">
+                <p className="text-[11px] text-[#888888] truncate max-w-xs font-mono">
                   {activeCommentPost.content}
                 </p>
               </div>
               <button
-                onClick={() => setActiveCommentPost(null)}
+                onClick={() => setActiveCommentPostId(null)}
                 className="p-1 rounded-full text-[#888888] hover:text-[#F2F2F2] cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
 
@@ -367,7 +451,7 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
             <div className="flex-1 overflow-y-auto p-4 space-y-3 divide-y divide-[#1e1e1e]">
               {activeCommentPost.commentsList && activeCommentPost.commentsList.length > 0 ? (
                 activeCommentPost.commentsList.map((comm) => (
-                  <div key={comm.id} className="pt-3 first:pt-0 flex gap-3">
+                  <div key={comm.id} className="pt-3 first:pt-0 flex gap-3 items-start">
                     <img
                       src={comm.author.avatar}
                       alt={comm.author.name}
@@ -380,11 +464,18 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                       </div>
                       <p className="text-xs text-[#CCCCCC] mt-0.5 leading-relaxed">{comm.content}</p>
                     </div>
+                    <button
+                      onClick={() => likeComment(activeCommentPost.id, comm.id)}
+                      className="text-[#777777] hover:text-white flex items-center gap-1 text-[10px] font-mono p-1"
+                    >
+                      <span className="material-symbols-outlined text-[13px]">favorite</span>
+                      <span>{comm.likes || 0}</span>
+                    </button>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-8 text-[#777777] text-xs font-mono">
-                  No responses recorded yet.
+                  No responses recorded yet. Be the first to chime in!
                 </div>
               )}
             </div>
@@ -397,6 +488,7 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
                 onChange={(e) => setCommentInput(e.target.value)}
                 placeholder="Write a response..."
                 className="flex-1 bg-[#1a1a1a] border border-[#262626] rounded-full px-4 py-2 text-xs text-[#F2F2F2] placeholder:text-[#666666] focus:outline-none focus:border-[#666666]"
+                autoFocus
               />
               <button
                 type="submit"
@@ -408,6 +500,14 @@ export const GroupFeedScreen: React.FC<GroupFeedScreenProps> = ({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Story Viewer Modal */}
+      {storyViewerIndex !== null && (
+        <StoryViewer
+          initialStoryIndex={storyViewerIndex}
+          onClose={() => setStoryViewerIndex(null)}
+        />
       )}
     </div>
   );

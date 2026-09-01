@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ScreenType } from '../../types';
+import { useApp } from '../../context/AppContext';
 
 interface AuthScreenProps {
   onNavigate: (screen: ScreenType) => void;
@@ -7,6 +8,7 @@ interface AuthScreenProps {
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onNavigate, onLoginSuccess }) => {
+  const { updateProfile, showToast } = useApp();
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('alex.rivers@design.studio');
   const [password, setPassword] = useState('SuperSecret2024!');
@@ -16,9 +18,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNavigate, onLoginSucce
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (name.trim()) {
+      updateProfile({
+        name: name.trim(),
+        username: `@${name.toLowerCase().replace(/\s+/g, '')}`,
+      });
+    }
+
     if (onLoginSuccess) {
       onLoginSuccess();
     }
+    showToast(isSignUp ? 'Registration confirmed! Welcome to Loop.' : 'Authentication successful');
     onNavigate(isSignUp ? 'profile-setup' : 'feed');
   };
 
@@ -36,10 +46,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNavigate, onLoginSucce
         >
           <span className="material-symbols-outlined text-[20px]">arrow_back</span>
         </button>
-        <div className="font-black text-xl tracking-tight text-[#F2F2F2] uppercase">LOOP // AUTH</div>
+        <div className="font-black text-xl tracking-tight text-[#F2F2F2] uppercase">LOOP // GATEWAY</div>
         <button
-          onClick={() => alert('LOOP is invite-only and end-to-end encrypted for closed circles.')}
+          onClick={() => showToast('LOOP is private, invite-only, and end-to-end encrypted.', 'info')}
           className="text-[#666666] hover:text-[#F2F2F2] p-2 cursor-pointer transition-colors"
+          title="Security Information"
         >
           <span className="material-symbols-outlined text-[20px]">help_outline</span>
         </button>
@@ -106,118 +117,90 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onNavigate, onLoginSucce
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-[#777777] uppercase tracking-widest">
-              EMAIL ADDRESS
+              EMAIL OR PHONE
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@rivers.design"
+              placeholder="alex.rivers@design.studio"
               required
-              className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] font-mono focus:outline-none focus:border-[#F2F2F2] transition-colors"
+              className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] focus:outline-none focus:border-[#F2F2F2] transition-colors"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black text-[#777777] uppercase tracking-widest">
-              PASSWORD
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                required
-                className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl py-3.5 pl-3.5 pr-11 text-xs text-[#F2F2F2] font-mono focus:outline-none focus:border-[#F2F2F2] transition-colors"
-              />
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black text-[#777777] uppercase tracking-widest">
+                PASSWORD
+              </label>
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#777777] hover:text-[#F2F2F2] p-1 cursor-pointer"
+                className="text-[10px] text-[#777777] hover:text-[#F2F2F2] uppercase font-mono tracking-wider cursor-pointer"
               >
-                <span className="material-symbols-outlined text-[18px]">
-                  {showPassword ? 'visibility_off' : 'visibility'}
-                </span>
+                {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+              required
+              className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] focus:outline-none focus:border-[#F2F2F2] transition-colors font-mono"
+            />
           </div>
 
-          {/* Password strength checklist */}
+          {/* Password complexity hints for signup */}
           {isSignUp && (
-            <div className="bg-[#0d0d0d] p-3 rounded-xl border border-[#262626] space-y-1 text-xs">
-              <div className={`flex items-center gap-1.5 font-mono text-[11px] ${hasLength ? 'text-[#F2F2F2]' : 'text-[#555555]'}`}>
-                <span className="material-symbols-outlined text-[14px]">
+            <div className="space-y-1 bg-[#0d0d0d] border border-[#262626] p-3 rounded-xl">
+              <div className="flex items-center gap-2 text-[10px] font-mono">
+                <span className={`material-symbols-outlined text-[13px] ${hasLength ? 'text-[#00FF66]' : 'text-[#555]'}`}>
                   {hasLength ? 'check_circle' : 'radio_button_unchecked'}
                 </span>
-                <span>AT LEAST 8 CHARACTERS</span>
+                <span className={hasLength ? 'text-[#CCCCCC]' : 'text-[#777]'}>At least 8 characters</span>
               </div>
-              <div className={`flex items-center gap-1.5 font-mono text-[11px] ${hasUpper ? 'text-[#F2F2F2]' : 'text-[#555555]'}`}>
-                <span className="material-symbols-outlined text-[14px]">
+              <div className="flex items-center gap-2 text-[10px] font-mono">
+                <span className={`material-symbols-outlined text-[13px] ${hasUpper ? 'text-[#00FF66]' : 'text-[#555]'}`}>
                   {hasUpper ? 'check_circle' : 'radio_button_unchecked'}
                 </span>
-                <span>INCLUDES UPPERCASE LETTER</span>
+                <span className={hasUpper ? 'text-[#CCCCCC]' : 'text-[#777]'}>One uppercase letter</span>
               </div>
-              <div className={`flex items-center gap-1.5 font-mono text-[11px] ${hasSymbolOrNum ? 'text-[#F2F2F2]' : 'text-[#555555]'}`}>
-                <span className="material-symbols-outlined text-[14px]">
+              <div className="flex items-center gap-2 text-[10px] font-mono">
+                <span className={`material-symbols-outlined text-[13px] ${hasSymbolOrNum ? 'text-[#00FF66]' : 'text-[#555]'}`}>
                   {hasSymbolOrNum ? 'check_circle' : 'radio_button_unchecked'}
                 </span>
-                <span>INCLUDES NUMBER / SYMBOL</span>
+                <span className={hasSymbolOrNum ? 'text-[#CCCCCC]' : 'text-[#777]'}>One number or special character</span>
               </div>
             </div>
           )}
 
           {isSignUp && (
-            <label className="flex items-center gap-2.5 cursor-pointer pt-1">
+            <label className="flex items-start gap-2 text-xs text-[#888888] cursor-pointer pt-1">
               <input
                 type="checkbox"
                 checked={agreeTerms}
                 onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="accent-white rounded cursor-pointer"
+                className="mt-0.5 accent-white rounded"
+                required
               />
-              <span className="text-[11px] text-[#777777]">
-                I agree to the <span className="text-[#F2F2F2] underline">Private Space Guidelines</span> &amp; Encryption Terms.
-              </span>
+              <span>I agree to the End-to-End Encryption Protocol and Community Charter.</span>
             </label>
           )}
 
           <button
             type="submit"
-            className="w-full py-4 rounded-xl bg-[#F2F2F2] text-[#050505] font-black text-xs uppercase tracking-widest shadow-[0_0_24px_rgba(255,255,255,0.2)] hover:bg-white active:scale-95 transition-all mt-2 cursor-pointer"
+            className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest bg-[#F2F2F2] text-[#050505] hover:bg-white active:scale-98 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-6 cursor-pointer"
           >
-            {isSignUp ? 'CREATE YOUR ACCOUNT →' : 'SIGN IN TO LOOP →'}
+            {isSignUp ? 'CREATE ENCRYPTED ACCOUNT →' : 'AUTHENTICATE & ENTER →'}
           </button>
         </form>
-
-        {/* Social SSO */}
-        <div className="space-y-3 pt-2">
-          <div className="relative flex items-center justify-center">
-            <div className="border-t border-[#262626] w-full"></div>
-            <span className="bg-[#050505] px-3 text-[10px] text-[#777777] font-black uppercase tracking-widest relative z-10 font-mono">
-              OR AUTHENTICATE WITH
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => onNavigate('feed')}
-              className="py-3 px-4 rounded-xl bg-[#0d0d0d] border border-[#262626] hover:border-[#555555] text-xs font-black uppercase tracking-wider text-[#F2F2F2] flex items-center justify-center gap-2 hover:bg-[#141414] transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm">terminal</span>
-              <span>GOOGLE</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onNavigate('feed')}
-              className="py-3 px-4 rounded-xl bg-[#0d0d0d] border border-[#262626] hover:border-[#555555] text-xs font-black uppercase tracking-wider text-[#F2F2F2] flex items-center justify-center gap-2 hover:bg-[#141414] transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm">phone_iphone</span>
-              <span>APPLE</span>
-            </button>
-          </div>
-        </div>
       </main>
+
+      <footer className="p-4 text-center">
+        <span className="text-[10px] font-mono text-[#555555]">ENCRYPTED SHIELD PROTOCOL 2026</span>
+      </footer>
     </div>
   );
 };

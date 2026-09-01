@@ -1,6 +1,6 @@
 {
   "name": "LOOP",
   "description": "A private, high-energy social space for your squads, circles, photo galleries, and group chats.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

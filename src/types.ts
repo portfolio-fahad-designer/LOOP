@@ -104,3 +104,33 @@ export interface Circle {
   imageUrl: string;
   borderColor: string;
 }
+
+export interface Story {
+  id: string;
+  user: User;
+  imageUrl: string;
+  caption?: string;
+  timestamp: string;
+  seen?: boolean;
+}
+
+export interface Squad {
+  id: string;
+  name: string;
+  tagline?: string;
+  description: string;
+  avatar: string;
+  coverImage?: string;
+  inviteCode: string;
+  privacy: 'invite-only' | 'members-approval' | 'open';
+  memberCount: number;
+  tags: string[];
+  themeColor?: string;
+}
+
+export interface ToastMessage {
+  id: string;
+  text: string;
+  type?: 'success' | 'info' | 'error';
+}
+

@@ -1,33 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ScreenType } from '../../types';
-import { currentUser } from '../../data/mockData';
+import { useApp } from '../../context/AppContext';
 
 interface ProfileSetupScreenProps {
   onNavigate: (screen: ScreenType) => void;
-  onSaveProfile?: (profile: { name: string; username: string; bio: string; avatar: string }) => void;
 }
 
-export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
-  onNavigate,
-  onSaveProfile,
-}) => {
+export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({ onNavigate }) => {
+  const { currentUser, updateProfile, showToast } = useApp();
+
   const [name, setName] = useState(currentUser.name);
   const [username, setUsername] = useState(currentUser.username);
   const [bio, setBio] = useState(currentUser.bio || '');
   const [avatar, setAvatar] = useState(currentUser.avatar);
-  const [selectedVibe, setSelectedVibe] = useState('synth');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const avatarOptions = [
+  const sampleAvatars = [
     'https://lh3.googleusercontent.com/aida-public/AB6AXuB58VRxD4QiynTFEpAWyC-PWO5YlBwvRkJgTMdOWxH-w23Mzq9G1364NXRB5SO-r2nbEqhnuF_tG2jwiFejzN-k5-XhwYbPyciDuCPASjeKYT9GUd_wm5vvBFNDQeUA9sncu3tZZ43XPyFc-Q-HlCdnvbyU0K3u11uLHJG0ZflRjcsGSVCbcAWReSxU63qZsLmb7x6xkZxrSKqlVwtsN36yg_A5w12kb7TZKyeWAml2F1U_SCY6PnQ',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuD89XUaV0XpQY-tXvC1Kq1XQkSZe4Z7E0W3_7yD_eZ_q4A2_Yk7zW5XQY-tXvC1Kq1XQkSZe4Z7E0W3_7yD_eZ_q4A2_Yk7zW5XQY',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAr2QjNkpywtQN7qOP3N-xvpTV0r7NZ1DuOi_EtpkCAcV_ym-DSPf1XVXdFyVjUEUlwcyD7kJ07lK7V6uDLwBDDVtLG_TG0uaPOA5uqXEvRvkHOfVHXSolpt2HVlRuOMKfmq1Q04R9f03nbENZqJEv8s2UHRNwE4ZQbfDI4LwBpCRI3fIdpUaIbnx5GxzegfOWYx2PRoIgaHmfUHI36TdE2YYjOQUikIIV6ut9mXeknDIE2ew-3iXU',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuCl_PEWuE1V4-2aDP-mfvk4DUOt4GRLfhap5joUSOPFnhudLJ7V5IjRrAOLSl0WwsBuVxYItcq9JOBnsv5YZ7ootSWKBFe8zqIaUs_6aa1PcXxsZ5y6kJ17DDt1X88AXaa9TEM1Z4pm1wIVAhS30L11mc2pZYFXp7pLkZwf0yIS8jY5bjm7Xl3THqcsob5kiqeXGYenkbUU-aaAQJhEHFufkZfhrcB6tEEuXFt0PdiL02r7snvBP8E',
+    'https://lh3.googleusercontent.com/aida-public/AB6AXuAMxWzJfNl-4GXFoXI_8Jv4dTznTXkUAV5qlfExn6BMAJPutF68p7JhfcL2gspHrHajUnw-WMp0gDZMSd_z4Try441QBwWgYr8ufOyHBcHK5sGUamPw6PX8Cas_jIqYqHUffw1ant5R6pYg_PvqLswkeOj3xHSX8pdrnTwYC-7hKSWzVRkrOjtz2HWbmBW-DB7NL0YLq17oUC8mAi9j-L2ruMc7hgq8psvN7OaV6vDlpYywFz-GoX4',
   ];
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAvatar(reader.result);
+          showToast('Image loaded');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSaveProfile) {
-      onSaveProfile({ name, username, bio, avatar });
-    }
+    updateProfile({
+      name: name.trim(),
+      username: username.trim().startsWith('@') ? username.trim() : `@${username.trim()}`,
+      bio: bio.trim(),
+      avatar,
+    });
     onNavigate('onboarding-success');
   };
 
@@ -54,6 +69,15 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
         </button>
       </header>
 
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* Main Form */}
       <main className="pt-28 px-4 max-w-md mx-auto w-full space-y-6">
         <div className="text-center space-y-2">
@@ -66,17 +90,43 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
           </p>
         </div>
 
-        {/* Avatar Upload Container */}
+        {/* Avatar Selection */}
         <div className="flex flex-col items-center gap-3">
-          <div className="relative group cursor-pointer">
+          <div
+            className="relative group cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+            title="Upload from device"
+          >
             <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#444444] shadow-2xl">
               <img src={avatar} alt="Profile preview" className="w-full h-full object-cover" />
             </div>
             <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+              <span className="material-symbols-outlined text-white text-xl">upload_file</span>
             </div>
           </div>
-          <p className="text-[11px] text-[#AAAAAA] font-black uppercase tracking-wider">CHOOSE AVATAR</p>
+          
+          {/* Preset avatar pickers */}
+          <div className="flex items-center gap-2">
+            {sampleAvatars.map((url, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setAvatar(url)}
+                className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all cursor-pointer ${
+                  avatar === url ? 'border-white scale-110' : 'border-[#333]'
+                }`}
+              >
+                <img src={url} alt="Preset" className="w-full h-full object-cover" />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="px-2.5 py-1 text-[10px] font-mono uppercase bg-[#181818] hover:bg-[#252525] border border-[#333] rounded-lg text-[#AAA] cursor-pointer"
+            >
+              Browse
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -98,68 +148,41 @@ export const ProfileSetupScreen: React.FC<ProfileSetupScreenProps> = ({
             <label className="text-[10px] font-black text-[#777777] uppercase tracking-widest">
               HANDLE / CALLSIGN
             </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#777777] font-mono text-xs">@</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="alex_r"
-                required
-                className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl py-3.5 pl-8 pr-4 text-xs text-[#F2F2F2] font-mono focus:outline-none focus:border-[#F2F2F2] transition-colors"
-              />
-            </div>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="@alexrivers"
+              required
+              className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] focus:outline-none focus:border-[#F2F2F2] transition-colors font-mono"
+            />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black text-[#777777] uppercase tracking-widest">
-              BIO / PROFILE MANIFEST
+              OPERATOR BIO
             </label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Product Designer & Synthesizer Nerd. Building the future of private social circles. 🌌"
               rows={3}
-              className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] focus:outline-none focus:border-[#F2F2F2] transition-colors resize-none leading-relaxed"
+              placeholder="Design systems, cyberpunk aesthetics, and night vibes..."
+              className="w-full bg-[#0d0d0d] border border-[#262626] rounded-xl p-3.5 text-xs text-[#F2F2F2] focus:outline-none focus:border-[#F2F2F2] transition-colors resize-none font-sans"
             />
-          </div>
-
-          {/* Vibe Presets */}
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-[#777777] uppercase tracking-widest">
-              IDENTITY THEME PRESET
-            </label>
-            <div className="flex gap-2">
-              {[
-                { id: 'synth', label: 'MONO BRUTAL', desc: 'Stark 100%' },
-                { id: 'cyan', label: 'HIGH CONTRAST', desc: 'Raw Black' },
-                { id: 'pink', label: 'STEALTH OBSCURE', desc: 'Deep Gray' },
-              ].map((vibe) => (
-                <button
-                  key={vibe.id}
-                  type="button"
-                  onClick={() => setSelectedVibe(vibe.id)}
-                  className={`flex-1 py-2.5 px-2 rounded-xl text-center border transition-all cursor-pointer ${
-                    selectedVibe === vibe.id
-                      ? 'border-[#F2F2F2] bg-[#1a1a1a] text-[#F2F2F2]'
-                      : 'border-[#262626] bg-[#0d0d0d] text-[#666666] hover:text-[#999999]'
-                  }`}
-                >
-                  <div className="text-[10px] font-black uppercase tracking-wider">{vibe.label}</div>
-                  <div className="text-[8px] font-mono text-[#555555]">{vibe.desc}</div>
-                </button>
-              ))}
-            </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-4 rounded-xl bg-[#F2F2F2] text-[#050505] font-black text-xs uppercase tracking-widest shadow-[0_0_24px_rgba(255,255,255,0.2)] hover:bg-white active:scale-95 transition-all mt-6 cursor-pointer"
+            className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest bg-[#F2F2F2] text-[#050505] hover:bg-white active:scale-98 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-6 cursor-pointer"
           >
-            CONFIRM IDENTITY →
+            CONFIRM &amp; ENTER SQUAD →
           </button>
         </form>
       </main>
+
+      <footer className="p-4 text-center">
+        <span className="text-[10px] font-mono text-[#555555]">ENCRYPTED WITH SQUAD PROTOCOL V2.4</span>
+      </footer>
     </div>
   );
 };

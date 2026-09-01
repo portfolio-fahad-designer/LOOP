@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
-import { ScreenType, Post, GalleryItem, ChatMessage } from './types';
-import { 
-  initialPosts, 
-  galleryHighlights, 
-  galleryItems, 
-  initialChatMessages,
-  currentUser 
-} from './data/mockData';
-import { TopScreenSwitcher, BottomNavBar } from './components/Navigation';
+import { ScreenType } from './types';
+import { AppProvider, useApp } from './context/AppContext';
+import { AppNavbar, BottomNavBar } from './components/Navigation';
 import { CreateModal } from './components/CreateModal';
 
 // Screens
@@ -22,140 +16,23 @@ import { ProfileSetupScreen } from './components/screens/ProfileSetupScreen';
 import { OnboardingSuccessScreen } from './components/screens/OnboardingSuccessScreen';
 import { AuthScreen } from './components/screens/AuthScreen';
 
-export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('landing');
+function AppContent() {
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>('feed');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { toasts, removeToast } = useApp();
 
-  // App-wide interactive states
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [galleryPhotos, setGalleryPhotos] = useState<GalleryItem[]>(galleryItems);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatMessages);
-
-  // Handlers for interactive actions
-  const handleAddPost = (newPost: Post) => {
-    setPosts([newPost, ...posts]);
-  };
-
-  const handleAddGalleryItem = (newItem: GalleryItem) => {
-    setGalleryPhotos([newItem, ...galleryPhotos]);
-  };
-
-  const handleToggleGalleryLike = (itemId: string) => {
-    setGalleryPhotos((prev) =>
-      prev.map((item) => {
-        if (item.id === itemId) {
-          const isLiked = !item.isLiked;
-          return {
-            ...item,
-            isLiked,
-            likes: isLiked ? item.likes + 1 : item.likes - 1,
-          };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleVotePoll = (postId: string, optionId: string) => {
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId && p.poll) {
-          const previousVote = p.poll.userVotedId;
-          const isRemovingVote = previousVote === optionId;
-
-          const updatedOptions = p.poll.options.map((opt) => {
-            if (opt.id === optionId) {
-              return { ...opt, votes: isRemovingVote ? Math.max(0, opt.votes - 1) : opt.votes + 1 };
-            }
-            if (opt.id === previousVote) {
-              return { ...opt, votes: Math.max(0, opt.votes - 1) };
-            }
-            return opt;
-          });
-
-          const totalVotes = updatedOptions.reduce((acc, curr) => acc + curr.votes, 0);
-
-          return {
-            ...p,
-            poll: {
-              ...p.poll,
-              userVotedId: isRemovingVote ? undefined : optionId,
-              totalVotes,
-              options: updatedOptions,
-            },
-          };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleAddComment = (postId: string, text: string) => {
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          const newComment = {
-            id: `c-${Date.now()}`,
-            author: currentUser,
-            content: text,
-            timeAgo: 'Just now',
-          };
-          const existing = p.commentsList || [];
-          return {
-            ...p,
-            commentsCount: p.commentsCount + 1,
-            commentsList: [...existing, newComment],
-          };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleToggleReaction = (postId: string, emoji: string) => {
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          const reactions = p.reactions ? [...p.reactions] : [];
-          const existingIndex = reactions.findIndex((r) => r.emoji === emoji);
-
-          if (existingIndex > -1) {
-            const current = reactions[existingIndex];
-            if (current.active) {
-              reactions[existingIndex] = {
-                ...current,
-                count: Math.max(0, current.count - 1),
-                active: false,
-              };
-            } else {
-              reactions[existingIndex] = {
-                ...current,
-                count: current.count + 1,
-                active: true,
-              };
-            }
-          } else {
-            reactions.push({ emoji, count: 1, active: true });
-          }
-
-          return {
-            ...p,
-            reactions: reactions.filter((r) => r.count > 0 || r.active),
-          };
-        }
-        return p;
-      })
-    );
-  };
-
-  const handleSendMessage = (msg: ChatMessage) => {
-    setChatMessages((prev) => [...prev, msg]);
-  };
+  const showAppNavbar = ['feed', 'gallery', 'chat', 'members', 'settings', 'profile'].includes(currentScreen);
 
   return (
-    <div className="min-h-screen bg-background text-on-surface flex flex-col font-body selection:bg-primary-container selection:text-white">
-      {/* Top Screen Selector for seamless switching between all 10 prototype designs */}
-      <TopScreenSwitcher currentScreen={currentScreen} onNavigate={setCurrentScreen} />
+    <div className="min-h-screen bg-[#050505] text-[#F2F2F2] flex flex-col font-sans selection:bg-[#F2F2F2] selection:text-[#050505]">
+      {/* Global Application Navbar with Squad Switcher & Navigation */}
+      {showAppNavbar && (
+        <AppNavbar
+          currentScreen={currentScreen}
+          onNavigate={setCurrentScreen}
+          onOpenCreate={() => setIsCreateModalOpen(true)}
+        />
+      )}
 
       {/* Screen Render Canvas */}
       <div className="flex-1 w-full">
@@ -165,11 +42,6 @@ export default function App() {
 
         {currentScreen === 'feed' && (
           <GroupFeedScreen
-            posts={posts}
-            onAddPost={handleAddPost}
-            onVotePoll={handleVotePoll}
-            onAddComment={handleAddComment}
-            onToggleReaction={handleToggleReaction}
             onNavigate={setCurrentScreen}
             onOpenCreate={() => setIsCreateModalOpen(true)}
           />
@@ -177,17 +49,13 @@ export default function App() {
 
         {currentScreen === 'gallery' && (
           <GalleryScreen
-            highlights={galleryHighlights}
-            galleryItems={galleryPhotos}
-            onToggleLike={handleToggleGalleryLike}
             onNavigate={setCurrentScreen}
+            onOpenCreate={() => setIsCreateModalOpen(true)}
           />
         )}
 
         {currentScreen === 'chat' && (
           <GroupChatScreen
-            messages={chatMessages}
-            onSendMessage={handleSendMessage}
             onNavigate={setCurrentScreen}
           />
         )}
@@ -227,13 +95,55 @@ export default function App() {
         onOpenCreate={() => setIsCreateModalOpen(true)}
       />
 
-      {/* Versatile Creation Modal */}
+      {/* Creation Modal for Posts, Stories, Polls & Media */}
       <CreateModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onAddPost={handleAddPost}
-        onAddGalleryItem={handleAddGalleryItem}
       />
+
+      {/* Dynamic Toast Notifications Hub */}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              onClick={() => removeToast(toast.id)}
+              className={`pointer-events-auto flex items-center justify-between p-3.5 rounded-xl border backdrop-blur-xl shadow-2xl transition-all animate-in fade-in slide-in-from-bottom-2 duration-200 cursor-pointer ${
+                toast.type === 'success'
+                  ? 'bg-[#002b11]/90 border-[#00FF66]/40 text-[#E0FFE0]'
+                  : toast.type === 'error'
+                  ? 'bg-[#3b0b0b]/90 border-[#FF4444]/40 text-[#FFE0E0]'
+                  : 'bg-[#181818]/90 border-[#333333] text-[#F2F2F2]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-[18px]">
+                  {toast.type === 'success' ? 'check_circle' : toast.type === 'error' ? 'error' : 'info'}
+                </span>
+                <span className="text-xs font-bold tracking-tight">{toast.message}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeToast(toast.id);
+                }}
+                className="text-xs opacity-60 hover:opacity-100 p-1"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
+

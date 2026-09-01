@@ -1,4 +1,4 @@
-import { User, Post, GalleryHighlight, GalleryItem, ChatMessage, Circle } from '../types';
+import { User, Post, GalleryHighlight, GalleryItem, ChatMessage, Circle, Squad, Story } from '../types';
 
 export const currentUser: User = {
   id: 'u1',
@@ -311,23 +311,80 @@ export const initialChatMessages: ChatMessage[] = [
   },
 ];
 
-export const userCircles: Circle[] = [
+export const initialSquads: Squad[] = [
   {
-    id: 'cir1',
-    name: 'Design Squad',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3urL80W5xIQc2ee-_aqWWyEy6ipd8-CAGkwfOw6Tc8iXKmh3KCJs-Iz3e6VsKDVjBuDJcr4CDWWWOeTr8DBQspQNxobUTvrc1jKwMThE2F4ESHxk5H1XFQDKwiYP8tF8MqNICeTiIKBi-CUdmBthzP4UF_j2DYTvwW100ad3mJiPPC_k6pNrEsp0GEdW02gna8kq64FigyvCx-xx3sG8zZYLsECMXTLTE6YeA84viFp9qnNsWDMk',
-    borderColor: 'border-primary/50',
+    id: 'squad-1',
+    name: 'DESIGN SQUAD',
+    tagline: 'Spatial Aesthetics & Midnight Builds',
+    description: 'High-fidelity private digital laboratory for our inner collective, authentic moments, curated media, and live product iteration.',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3urL80W5xIQc2ee-_aqWWyEy6ipd8-CAGkwfOw6Tc8iXKmh3KCJs-Iz3e6VsKDVjBuDJcr4CDWWWOeTr8DBQspQNxobUTvrc1jKwMThE2F4ESHxk5H1XFQDKwiYP8tF8MqNICeTiIKBi-CUdmBthzP4UF_j2DYTvwW100ad3mJiPPC_k6pNrEsp0GEdW02gna8kq64FigyvCx-xx3sG8zZYLsECMXTLTE6YeA84viFp9qnNsWDMk',
+    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC9O6AZ_G90DzGx8RDesXW_2E3uPOMp4K2Daz-Tm1seZs8uucrBKLXhwYmKYdUwIZuJyLBZ9s-LPEB83QWh5mT43SbnB2Fg6Z-CKjGeODVT_rx6gmv4C9e4Kp0WoewUkyG12oDmuvONhgUMoaGJVLW_BZoufEd0MPDNny2SlZ6td8GGPVx6eMubn0TgBuxfxIdJStnVUAPvkP02jPghhdJboNJwvctfjYaVokooJ6S6pG7HULnbIHs',
+    inviteCode: 'DSQD-9842',
+    privacy: 'invite-only',
+    memberCount: 8,
+    tags: ['AESTHETICS', 'EXPERIMENTS', 'ENCRYPTED'],
+    themeColor: '#F2F2F2',
   },
   {
-    id: 'cir2',
-    name: 'Night Gamers',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCeVVZS5kz3FqR6RWYISzE-4J6ReaaxZECgujbvDeqAVm9xhyalyEsZlX-B44Z9DN87nglD99ntIMw4cxQGmSPHuevhHx4p6b8inXjXjj3b5vhb2iyS7AxYrxHGq9n1YY_wF-X7cJsG9_IZoWwFLq9bjj0LmRi7J_7I6zJ_Z4fZ65vbOz4x4LeATd1eDZxNGDoKxc1JBlAULON4Bgi0sa4oNlC0m65IIgBR1SLo34v_ndIYkTylOS0',
-    borderColor: 'border-secondary/50',
+    id: 'squad-2',
+    name: 'SYNTH & BEATS',
+    tagline: 'Analog Modular & Underground Sound',
+    description: 'Experimental audio jams, patch sharing, late night live streams, and vinyl digging archive.',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCeVVZS5kz3FqR6RWYISzE-4J6ReaaxZECgujbvDeqAVm9xhyalyEsZlX-B44Z9DN87nglD99ntIMw4cxQGmSPHuevhHx4p6b8inXjXjj3b5vhb2iyS7AxYrxHGq9n1YY_wF-X7cJsG9_IZoWwFLq9bjj0LmRi7J_7I6zJ_Z4fZ65vbOz4x4LeATd1eDZxNGDoKxc1JBlAULON4Bgi0sa4oNlC0m65IIgBR1SLo34v_ndIYkTylOS0',
+    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAM_3T8Z8_mPurEX-hbyPkU0B2C4DK7GIWY2qjF4om789StN_b2xhMtqeo8sj34mE4J_YJgMaL9sE2khazlkNYqkj8w0M_xBn1FUhnmfMdO1qDn98abav0j9nRcRTKbyDyhDv3IaVlXKijif3JFyE4E9PLCZGRsElgAJwoj1_2ZsYhPgDMDnRIw4j96nQe4n7QeQ2j4-w-vqgU7XXXnXmLodeTMVxc4r-aU3NrVVFLZq0DgVozUhGM',
+    inviteCode: 'BEAT-4040',
+    privacy: 'members-approval',
+    memberCount: 14,
+    tags: ['AUDIO', 'SYNTH', 'VIBES'],
+    themeColor: '#FFFFFF',
   },
   {
-    id: 'cir3',
-    name: 'Foodie Fam',
-    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW90-mQYeEonH3pRMnQX2v7BxI2hWWmzMfQmTveLavQ9C9Si00ucxz7ZpJxV5MOvzgp3QNLRayncJaaAWRzAyB7qRyg3Go3q52pi69PbbIiyEM_w5fTfhFV0NsmT2t2s4wwsN33AcylQJjl24h8DI1U5z73GKdN8pJ1097f7GsPj9WqlBcuatBCHTr0eNzQ-AuIr__I2om3y9AkkBDTnvO5E0Hyfs-CteTGblUnpU0z-Ntnc3y3RE',
-    borderColor: 'border-tertiary/50',
+    id: 'squad-3',
+    name: 'TOKYO NIGHTS',
+    tagline: 'Photography & Underground Explorations',
+    description: 'Street snaps, neon aesthetics, ramen spots, and midnight wanderers collective.',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW90-mQYeEonH3pRMnQX2v7BxI2hWWmzMfQmTveLavQ9C9Si00ucxz7ZpJxV5MOvzgp3QNLRayncJaaAWRzAyB7qRyg3Go3q52pi69PbbIiyEM_w5fTfhFV0NsmT2t2s4wwsN33AcylQJjl24h8DI1U5z73GKdN8pJ1097f7GsPj9WqlBcuatBCHTr0eNzQ-AuIr__I2om3y9AkkBDTnvO5E0Hyfs-CteTGblUnpU0z-Ntnc3y3RE',
+    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUlAhyo2m-TC5N-LmVd6eIiqviXg2OTkFEg5TMsi6oUF-ksO3Pi0GpyImCDYdN9-TlETUctbOCLuHxOhWFLTzy7hUf2ofAFAkeIhCAqU4SpOryqMAIvHtg45ZXU0s8CqOnBaHa_SJ6ar6GhPm0QuF3rNDLDJ7oRlGtTCa1KcK-UPQsckJf4E_DxLCNsiBCWl4-eHAUTY3_M5bBnY5iLZSFg8nw6UhMphsD6ogxofRHpSjyItMtmcA',
+    inviteCode: 'TKYO-7711',
+    privacy: 'invite-only',
+    memberCount: 6,
+    tags: ['STREET', 'NEON', 'JAPAN'],
+    themeColor: '#CCCCCC',
   },
 ];
+
+export const initialStories: Story[] = [
+  {
+    id: 'st-1',
+    user: allUsers.mia,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAr2QjNkpywtQN7qOP3N-xvpTV0r7NZ1DuOi_EtpkCAcV_ym-DSPf1XVXdFyVjUEUlwcyD7kJ07lK7V6uDLwBDDVtLG_TG0uaPOA5uqXEvRvkHOfVHXSolpt2HVlRuOMKfmq1Q04R9f03nbENZqJEv8s2UHRNwE4ZQbfDI4LwBpCRI3fIdpUaIbnx5GxzegfOWYx2PRoIgaHmfUHI36TdE2YYjOQUikIIV6ut9mXeknDIE2ew-3iXU',
+    caption: '3 AM render studio vibes ⚡',
+    timestamp: '12m ago',
+    seen: false,
+  },
+  {
+    id: 'st-2',
+    user: allUsers.chloe,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA_VTCkekPprSCc9GwQfevw6aeXVdqupTkw5_APQlVwVo-0RMyZmMHzWMcUbv1oJSVYvrHq5VPMNTvwSk7eaYc0nXBdBnV1GSGu3rFOMzg9pZ-EQ3F_Bvt8P5ALSCFUhed2T_pPFQelgIKMhkuwhnzJpWnbPpUVQgQmvhBTkDwUIqaN0Y-b8CwSFMxuD-yoPwjfYF7WNyDqaa1KGr2gRrOQoatWCTthX6iYhoMUZuWvOhFbBFmgeI8',
+    caption: 'Live light performance! 🎶',
+    timestamp: '45m ago',
+    seen: false,
+  },
+  {
+    id: 'st-3',
+    user: allUsers.leo,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUlAhyo2m-TC5N-LmVd6eIiqviXg2OTkFEg5TMsi6oUF-ksO3Pi0GpyImCDYdN9-TlETUctbOCLuHxOhWFLTzy7hUf2ofAFAkeIhCAqU4SpOryqMAIvHtg45ZXU0s8CqOnBaHa_SJ6ar6GhPm0QuF3rNDLDJ7oRlGtTCa1KcK-UPQsckJf4E_DxLCNsiBCWl4-eHAUTY3_M5bBnY5iLZSFg8nw6UhMphsD6ogxofRHpSjyItMtmcA',
+    caption: 'Testing the new OLED displays',
+    timestamp: '2h ago',
+    seen: true,
+  },
+  {
+    id: 'st-4',
+    user: allUsers.sarah,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkgKTgGcJOTvtEE9WiN5BECNB9xY1apqDCMpqD-y-6w-UqbRQ2D-NY3nLgJJ43CD_SJ8twcR1Vwex9oa1nJpe9a3Nrnk0_PnzhwRtCSXDlEoBvrC6jEFglTGwl-0mS3dQUaT3YuayXHR6urhtRsTw9ayIMVRCsQhC5W6YPpukXK-cCnTzC39Iu0jmUuCDE5E-5JoNgM4W-5rU6Yn4xJ4TbJ9j-qgwjLrkya0rV3CmD5jYslZD61j0',
+    caption: 'Moodboarding for Sprint 04 ✨',
+    timestamp: '4h ago',
+    seen: true,
+  },
+];
+

@@ -1,380 +1,386 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ScreenType } from '../../types';
+import { useApp } from '../../context/AppContext';
 
 interface GroupSettingsScreenProps {
   onNavigate: (screen: ScreenType) => void;
 }
 
 export const GroupSettingsScreen: React.FC<GroupSettingsScreenProps> = ({ onNavigate }) => {
-  const [inviteCode, setInviteCode] = useState('loop.app/join/DSQD-2024');
-  const [allowMemberInvites, setAllowMemberInvites] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState('Purple Pulse');
-  const [showThemeModal, setShowThemeModal] = useState(false);
-  const [showNameModal, setShowNameModal] = useState(false);
-  const [groupName, setGroupName] = useState('Design Squad');
-  const [groupDesc, setGroupDesc] = useState('UI/UX, prototyping, and cyberpunk design experiments.');
-  const [dangerAction, setDangerAction] = useState<'leave' | 'delete' | null>(null);
+  const {
+    currentSquad,
+    updateSquad,
+    soundMuted,
+    setSoundMuted,
+    resetDemoData,
+    showToast,
+  } = useApp();
 
-  const handleCopyLink = () => {
-    navigator.clipboard?.writeText(`https://${inviteCode}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [nameInput, setNameInput] = useState(currentSquad.name);
+  const [descInput, setDescInput] = useState(currentSquad.description);
+  const [privacyInput, setPrivacyInput] = useState(currentSquad.privacy);
+  const [allowComments, setAllowComments] = useState(true);
+  const [pushNotifs, setPushNotifs] = useState(true);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          updateSquad({ avatar: reader.result });
+          showToast('Squad avatar updated');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleRegenerate = () => {
-    const randomCode = `DSQD-${Math.floor(1000 + Math.random() * 9000)}`;
-    setInviteCode(`loop.app/join/${randomCode}`);
+  const handleSaveSquadInfo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nameInput.trim()) return;
+    updateSquad({
+      name: nameInput.trim().toUpperCase(),
+      description: descInput.trim(),
+      privacy: privacyInput,
+    });
+    setShowEditModal(false);
   };
 
-  const themes = ['Purple Pulse', 'Cyan Matrix', 'Pink Haze', 'Midnight Noir'];
+  const handleRegenerateCode = () => {
+    const newCode = `SQD-${Math.floor(1000 + Math.random() * 9000)}`;
+    updateSquad({ inviteCode: newCode });
+    showToast(`New invite code generated: ${newCode}`);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard?.writeText(`https://loopsquad.app/join/${currentSquad.inviteCode}`);
+    showToast('Squad invite link copied');
+  };
 
   return (
     <div className="bg-[#050505] text-[#F2F2F2] min-h-screen pb-32">
-      {/* TopAppBar */}
-      <header className="fixed top-10 left-0 w-full z-40 bg-[#050505]/95 backdrop-blur-xl border-b border-[#262626] flex items-center justify-between px-5 h-16">
-        <button
-          onClick={() => onNavigate('feed')}
-          className="text-[#999999] hover:text-[#F2F2F2] transition-colors p-2 rounded-full cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[20px]" data-icon="arrow_back">arrow_back</span>
-        </button>
+      {/* Sub Header Toolbar */}
+      <div className="pt-20 px-4 max-w-xl mx-auto flex items-center justify-between pb-4">
         <div className="flex items-center gap-3">
-          <h1 className="font-black text-xl tracking-tight text-[#F2F2F2] uppercase">SETTINGS</h1>
-          <span className="text-[9px] font-black uppercase tracking-[0.25em] text-[#888888] bg-[#141414] border border-[#262626] px-2 py-0.5 rounded-full">
-            CONFIG
-          </span>
+          <button
+            onClick={() => onNavigate('feed')}
+            className="text-[#999999] hover:text-[#F2F2F2] transition-colors p-1.5 rounded-full hover:bg-[#181818] cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+          </button>
+          <div>
+            <h1 className="font-black text-xl tracking-tight text-[#F2F2F2] uppercase">
+              {currentSquad.name}
+            </h1>
+            <p className="text-[10px] text-[#777] font-mono">SQUAD CONFIGURATION &amp; ACCESS</p>
+          </div>
         </div>
         <button
           onClick={() => onNavigate('feed')}
-          className="text-[#999999] hover:text-[#F2F2F2] transition-colors p-2 rounded-full cursor-pointer"
+          className="px-3.5 py-1.5 rounded-full bg-white text-black font-black text-xs uppercase tracking-wider hover:bg-white/90 transition-all flex items-center gap-1 shadow-md cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+          <span className="material-symbols-outlined text-[16px]">done</span>
+          <span>Done</span>
         </button>
-      </header>
+      </div>
 
-      <main className="pt-28 px-4 max-w-xl mx-auto space-y-8">
-        {/* Header Section */}
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleAvatarUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
+      <main className="px-4 max-w-xl mx-auto space-y-8">
+        {/* Squad Identity Header */}
         <section className="flex flex-col items-center space-y-4">
-          <div className="relative group cursor-pointer" onClick={() => setShowNameModal(true)}>
+          <div
+            className="relative group cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
             <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#333333] relative shadow-2xl">
               <img
-                alt="Group Icon"
+                alt={currentSquad.name}
                 className="object-cover w-full h-full"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDopw0GXgwEAQlu_rz-35beGfRqW5u-BlNkIeufFUuVNgxxsptQDKJMUDynPZ8GKqy-4pUvfVctNimZfvwNhZaQHn20gtupPlGBWnmU27WDcsEwALt1in4Rvorz3Qui08B2epWmAQ7dsF9TDxHueNM26KEoalnLCogtR9DF1x-oNRmnZSaVhGqO17ZVc3e4zzFHAiCOPMlaGM0-3YcqKNxC4Hv_M4dWHzAryaKk06NO8S8fFwQnA0o"
+                src={currentSquad.avatar}
               />
               <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full backdrop-blur-sm">
-                <span className="material-symbols-outlined text-white text-[20px]" data-icon="edit">edit</span>
+                <span className="material-symbols-outlined text-white text-[20px]">photo_camera</span>
               </div>
             </div>
           </div>
 
           <div className="text-center">
-            <h2 className="font-black text-2xl text-[#F2F2F2] uppercase tracking-tight">{groupName}</h2>
-            <p className="text-xs text-[#888888] max-w-xs mx-auto mt-1 leading-relaxed">{groupDesc}</p>
+            <h2 className="font-black text-2xl text-[#F2F2F2] uppercase tracking-tight">
+              {currentSquad.name}
+            </h2>
+            <p className="text-xs text-[#888888] max-w-xs mx-auto mt-1 leading-relaxed">
+              {currentSquad.description}
+            </p>
             <button
               onClick={() => {
-                alert('Banner upload dialog opened! Pick an image for the group banner.');
+                setNameInput(currentSquad.name);
+                setDescInput(currentSquad.description);
+                setPrivacyInput(currentSquad.privacy);
+                setShowEditModal(true);
               }}
-              className="mt-3 px-4 py-1.5 bg-[#141414] text-[#AAAAAA] hover:text-[#F2F2F2] rounded-full font-bold text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center space-x-1.5 mx-auto border border-[#262626] cursor-pointer"
+              className="mt-3 px-4 py-1.5 bg-[#141414] hover:bg-[#202020] text-white rounded-full font-black text-[10px] uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 mx-auto border border-[#262626] cursor-pointer"
             >
-              <span className="material-symbols-outlined text-xs" data-icon="image">image</span>
-              <span>CHANGE BANNER</span>
+              <span className="material-symbols-outlined text-xs">edit</span>
+              <span>EDIT SQUAD INFO</span>
             </button>
           </div>
         </section>
 
-        {/* Section 1: Identity & Theme */}
-        <section className="space-y-2">
+        {/* Section 1: Security & Invite Codes */}
+        <section className="space-y-3">
           <h3 className="text-[10px] font-black text-[#777777] uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-            <span className="text-[#555555] font-mono">01 //</span> IDENTITY & VISUALS
+            <span className="text-[#555555] font-mono">01 //</span> SECURITY &amp; ACCESS CODES
           </h3>
-          <div className="bold-card rounded-2xl border border-[#262626] bg-[#0d0d0d] overflow-hidden">
-            <button
-              onClick={() => setShowNameModal(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-[#141414] transition-colors group border-b border-[#1f1f1f] text-left cursor-pointer"
-            >
-              <div className="flex items-center space-x-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-[#AAAAAA] group-hover:text-[#F2F2F2] transition-colors">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="edit_document">edit_document</span>
-                </div>
-                <span className="font-black text-xs uppercase tracking-wider text-[#F2F2F2]">Edit Name &amp; Description</span>
-              </div>
-              <span className="material-symbols-outlined text-[#666666] text-[18px]" data-icon="chevron_right">chevron_right</span>
-            </button>
 
-            <button
-              onClick={() => setShowThemeModal(true)}
-              className="w-full flex items-center justify-between p-4 hover:bg-[#141414] transition-colors group border-b border-[#1f1f1f] text-left cursor-pointer"
-            >
-              <div className="flex items-center space-x-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-[#AAAAAA] group-hover:text-[#F2F2F2] transition-colors">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="palette">palette</span>
-                </div>
-                <div className="text-left">
-                  <div className="font-black text-xs uppercase tracking-wider text-[#F2F2F2]">Custom Theme</div>
-                  <div className="text-[10px] text-[#777777] font-mono uppercase mt-0.5">{currentTheme}</div>
-                </div>
-              </div>
-              <span className="material-symbols-outlined text-[#666666] text-[18px]" data-icon="chevron_right">chevron_right</span>
-            </button>
-
-            <button
-              onClick={() => {
-                alert('Group Icon & Banner media settings opened.');
-              }}
-              className="w-full flex items-center justify-between p-4 hover:bg-[#141414] transition-colors group text-left cursor-pointer"
-            >
-              <div className="flex items-center space-x-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-[#AAAAAA] group-hover:text-[#F2F2F2] transition-colors">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="wallpaper">wallpaper</span>
-                </div>
-                <span className="font-black text-xs uppercase tracking-wider text-[#F2F2F2]">Squad Icon &amp; Banner</span>
-              </div>
-              <span className="material-symbols-outlined text-[#666666] text-[18px]" data-icon="chevron_right">chevron_right</span>
-            </button>
-          </div>
-        </section>
-
-        {/* Section 2: Member Management */}
-        <section className="space-y-2">
-          <h3 className="text-[10px] font-black text-[#777777] uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-            <span className="text-[#555555] font-mono">02 //</span> ROSTER & PERMISSIONS
-          </h3>
-          <div className="bold-card rounded-2xl border border-[#262626] bg-[#0d0d0d] overflow-hidden">
-            <button
-              onClick={() => onNavigate('members')}
-              className="w-full flex items-center justify-between p-4 hover:bg-[#141414] transition-colors group border-b border-[#1f1f1f] text-left cursor-pointer"
-            >
-              <div className="flex items-center space-x-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-[#AAAAAA] group-hover:text-[#F2F2F2] transition-colors">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="group">group</span>
-                </div>
-                <span className="font-black text-xs uppercase tracking-wider text-[#F2F2F2]">Squad Members (12)</span>
-              </div>
-              <span className="material-symbols-outlined text-[#666666] text-[18px]" data-icon="chevron_right">chevron_right</span>
-            </button>
-
-            <button
-              onClick={() => onNavigate('members')}
-              className="w-full flex items-center justify-between p-4 hover:bg-[#141414] transition-colors group border-b border-[#1f1f1f] text-left cursor-pointer"
-            >
-              <div className="flex items-center space-x-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-[#AAAAAA] group-hover:text-[#F2F2F2] transition-colors">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="shield_person">shield_person</span>
-                </div>
-                <span className="font-black text-xs uppercase tracking-wider text-[#F2F2F2]">Roles &amp; Access Keys</span>
-              </div>
-              <span className="material-symbols-outlined text-[#666666] text-[18px]" data-icon="chevron_right">chevron_right</span>
-            </button>
-
-            <button
-              onClick={() => {
-                alert('Pending join requests: 2 users waiting for approval.');
-              }}
-              className="w-full flex items-center justify-between p-4 hover:bg-[#141414] transition-colors group text-left cursor-pointer"
-            >
-              <div className="flex items-center space-x-3.5">
-                <div className="w-9 h-9 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-[#AAAAAA] group-hover:text-[#F2F2F2] transition-colors relative">
-                  <span className="material-symbols-outlined text-[18px]" data-icon="person_add">person_add</span>
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white rounded-full border border-black"></span>
-                </div>
-                <span className="font-black text-xs uppercase tracking-wider text-[#F2F2F2]">Pending Requests (2)</span>
-              </div>
-              <span className="material-symbols-outlined text-[#666666] text-[18px]" data-icon="chevron_right">chevron_right</span>
-            </button>
-          </div>
-        </section>
-
-        {/* Section 3: Invites */}
-        <section className="space-y-2">
-          <h3 className="text-[10px] font-black text-[#777777] uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-            <span className="text-[#555555] font-mono">03 //</span> SQUAD INVITATIONS
-          </h3>
-          <div className="bold-card rounded-2xl border border-[#262626] bg-[#0d0d0d] p-4 space-y-4">
-            <div className="bg-[#141414] rounded-xl p-2.5 flex items-center justify-between border border-[#262626]">
-              <span className="text-xs font-mono text-[#CCCCCC] truncate px-2 select-all">
-                {inviteCode}
-              </span>
-              <button
-                onClick={handleCopyLink}
-                className="p-2 text-[#AAAAAA] hover:text-[#F2F2F2] rounded-lg transition-colors cursor-pointer"
-                title="Copy Invite Link"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  {copied ? 'done' : 'content_copy'}
-                </span>
-              </button>
-            </div>
-
+          <div className="bold-card rounded-2xl border border-[#262626] bg-[#0d0d0d] p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <button
-                onClick={handleRegenerate}
-                className="px-3.5 py-1.5 bg-[#141414] hover:bg-[#1a1a1a] text-[#AAAAAA] hover:text-[#F2F2F2] border border-[#262626] font-bold text-[10px] uppercase tracking-wider rounded-full transition-colors flex items-center space-x-1.5 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-xs" data-icon="refresh">refresh</span>
-                <span>REGENERATE</span>
-              </button>
-
-              <label className="flex items-center cursor-pointer space-x-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#888888]">Allow member invites</span>
-                <input
-                  type="checkbox"
-                  checked={allowMemberInvites}
-                  onChange={(e) => setAllowMemberInvites(e.target.checked)}
-                  className="sr-only"
-                />
-                <div
-                  onClick={() => setAllowMemberInvites(!allowMemberInvites)}
-                  className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer border ${
-                    allowMemberInvites ? 'bg-[#F2F2F2] border-[#F2F2F2]' : 'bg-[#1a1a1a] border-[#333333]'
-                  }`}
+              <div>
+                <p className="text-xs font-black uppercase text-white tracking-wider">Access Token Key</p>
+                <p className="text-xs font-mono text-[#00FF66] mt-0.5">{currentSquad.inviteCode}</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleRegenerateCode}
+                  className="p-2 bg-[#161616] hover:bg-[#222] border border-[#333] text-white rounded-xl cursor-pointer"
+                  title="Generate New Code"
                 >
-                  <div
-                    className={`w-3.5 h-3.5 rounded-full absolute top-0.5 transition-transform ${
-                      allowMemberInvites ? 'left-5 bg-[#050505]' : 'left-0.5 bg-[#777777]'
-                    }`}
-                  />
-                </div>
-              </label>
+                  <span className="material-symbols-outlined text-base">refresh</span>
+                </button>
+                <button
+                  onClick={handleCopyCode}
+                  className="px-3 py-2 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl cursor-pointer hover:bg-white/90"
+                >
+                  Copy Link
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[#202020] flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-white">Privacy Mode</p>
+                <p className="text-[11px] text-[#777] font-mono uppercase">{currentSquad.privacy}</p>
+              </div>
+              <span className="text-[10px] font-mono bg-[#141414] border border-[#333] px-2.5 py-1 rounded-lg text-[#AAA]">
+                ENCRYPTED
+              </span>
             </div>
           </div>
         </section>
 
-        {/* Section 4: Danger Zone */}
-        <section className="space-y-2">
-          <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-            <span className="text-red-700 font-mono">04 //</span> DANGER ZONE
+        {/* Section 2: Preferences & Feedback */}
+        <section className="space-y-3">
+          <h3 className="text-[10px] font-black text-[#777777] uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+            <span className="text-[#555555] font-mono">02 //</span> AUDIO &amp; APP PREFERENCES
           </h3>
-          <div className="rounded-2xl border border-red-900/30 bg-red-950/10 overflow-hidden">
+
+          <div className="bold-card rounded-2xl border border-[#262626] bg-[#0d0d0d] divide-y divide-[#1f1f1f]">
+            {/* Sound FX Toggle */}
+            <div className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#161616] border border-[#333] flex items-center justify-center text-white">
+                  <span className="material-symbols-outlined text-base">volume_up</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">UI Sound Synthesizer</p>
+                  <p className="text-[10px] text-[#777] font-mono">Audio feedback on send, pulse, reactions</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSoundMuted(!soundMuted);
+                  showToast(!soundMuted ? 'Sound synthesizer muted' : 'Sound synthesizer active', 'info');
+                }}
+                className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${
+                  !soundMuted ? 'bg-white' : 'bg-[#222]'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full transition-transform ${
+                    !soundMuted ? 'translate-x-6 bg-black' : 'translate-x-0 bg-[#555]'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Comments Toggle */}
+            <div className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#161616] border border-[#333] flex items-center justify-center text-white">
+                  <span className="material-symbols-outlined text-base">forum</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Allow Member Comments</p>
+                  <p className="text-[10px] text-[#777] font-mono">Thread discussions under posts</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setAllowComments(!allowComments);
+                  showToast('Updated discussion preferences');
+                }}
+                className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${
+                  allowComments ? 'bg-white' : 'bg-[#222]'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full transition-transform ${
+                    allowComments ? 'translate-x-6 bg-black' : 'translate-x-0 bg-[#555]'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Push Notifications */}
+            <div className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#161616] border border-[#333] flex items-center justify-center text-white">
+                  <span className="material-symbols-outlined text-base">notifications</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Live Activity Alerts</p>
+                  <p className="text-[10px] text-[#777] font-mono">Broadcast popups for mentions & calls</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setPushNotifs(!pushNotifs);
+                  showToast('Notification preferences updated');
+                }}
+                className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${
+                  pushNotifs ? 'bg-white' : 'bg-[#222]'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full transition-transform ${
+                    pushNotifs ? 'translate-x-6 bg-black' : 'translate-x-0 bg-[#555]'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 3: Data Management & Factory Reset */}
+        <section className="space-y-3">
+          <h3 className="text-[10px] font-black text-[#777777] uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+            <span className="text-[#555555] font-mono">03 //</span> SYSTEM STORAGE
+          </h3>
+
+          <div className="bold-card rounded-2xl border border-[#262626] bg-[#0d0d0d] p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-white">Local Vault Storage</p>
+                <p className="text-[10px] text-[#777] font-mono">Synchronized in browser storage</p>
+              </div>
+              <span className="text-[10px] font-mono text-[#00FF66] bg-[#00FF66]/10 px-2 py-0.5 rounded border border-[#00FF66]/30">
+                ACTIVE
+              </span>
+            </div>
+
             <button
-              onClick={() => setDangerAction('leave')}
-              className="w-full flex items-center space-x-3.5 p-4 hover:bg-red-950/30 transition-colors border-b border-red-900/20 text-left cursor-pointer"
+              onClick={() => {
+                if (window.confirm('Reset all demo posts, messages, and settings to original state?')) {
+                  resetDemoData();
+                }
+              }}
+              className="w-full py-2.5 rounded-xl bg-[#220a0a] hover:bg-[#331111] border border-[#ff4444]/40 text-[#ff8888] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
-              <span className="material-symbols-outlined text-red-400 text-[18px]" data-icon="logout">logout</span>
-              <span className="font-black text-xs uppercase tracking-wider text-red-400">Leave Squad</span>
-            </button>
-            <button
-              onClick={() => setDangerAction('delete')}
-              className="w-full flex items-center space-x-3.5 p-4 hover:bg-red-950/30 transition-colors text-left cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-red-500 text-[18px]" data-icon="delete_forever">delete_forever</span>
-              <span className="font-black text-xs uppercase tracking-wider text-red-500">Delete Squad Permanently</span>
+              <span className="material-symbols-outlined text-base">restore</span>
+              <span>Restore Factory Demo Data</span>
             </button>
           </div>
         </section>
       </main>
 
-      {/* Theme Picker Modal */}
-      {showThemeModal && (
-        <div className="fixed inset-0 z-[90] bg-[#050505]/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0d0d0d] w-full max-w-sm rounded-2xl p-6 border border-[#262626] shadow-2xl space-y-4">
-            <h3 className="font-black text-base text-[#F2F2F2] uppercase tracking-tight">SELECT SQUAD PALETTE</h3>
-            <div className="space-y-2">
-              {themes.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => {
-                    setCurrentTheme(t);
-                    setShowThemeModal(false);
-                  }}
-                  className={`w-full p-3 rounded-xl border flex items-center justify-between text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                    currentTheme === t
-                      ? 'border-[#F2F2F2] bg-[#F2F2F2] text-[#050505]'
-                      : 'border-[#262626] bg-[#141414] text-[#AAAAAA] hover:text-[#F2F2F2]'
-                  }`}
-                >
-                  <span>{t}</span>
-                  {currentTheme === t && <span className="material-symbols-outlined text-[#050505] text-sm">check</span>}
-                </button>
-              ))}
+      {/* Edit Squad Info Modal */}
+      {showEditModal && (
+        <div
+          onClick={() => setShowEditModal(false)}
+          className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#0d0d0d] border border-[#333] w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-[#222] pb-3">
+              <h3 className="font-black text-sm uppercase text-white tracking-wider">
+                EDIT SQUAD METADATA
+              </h3>
+              <button onClick={() => setShowEditModal(false)} className="text-[#888] hover:text-white">
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
             </div>
-            <button
-              onClick={() => setShowThemeModal(false)}
-              className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-[#777777] hover:text-[#F2F2F2] cursor-pointer"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Edit Name Modal */}
-      {showNameModal && (
-        <div className="fixed inset-0 z-[90] bg-[#050505]/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0d0d0d] w-full max-w-md rounded-2xl p-6 border border-[#262626] shadow-2xl space-y-4">
-            <h3 className="font-black text-base text-[#F2F2F2] uppercase tracking-tight">EDIT SQUAD IDENTITY</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10px] text-[#777777] font-black uppercase tracking-widest">Squad Name</label>
+            <form onSubmit={handleSaveSquadInfo} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#888]">Squad Name</label>
                 <input
                   type="text"
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  className="w-full bg-[#141414] border border-[#262626] rounded-xl p-3 text-sm text-[#F2F2F2] mt-1 font-sans focus:outline-none focus:border-[#666666]"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  className="w-full bg-[#141414] border border-[#262626] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-white"
+                  required
                 />
               </div>
-              <div>
-                <label className="text-[10px] text-[#777777] font-black uppercase tracking-widest">Description</label>
-                <textarea
-                  value={groupDesc}
-                  onChange={(e) => setGroupDesc(e.target.value)}
-                  rows={3}
-                  className="w-full bg-[#141414] border border-[#262626] rounded-xl p-3 text-sm text-[#F2F2F2] mt-1 resize-none font-sans focus:outline-none focus:border-[#666666]"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end pt-3">
-              <button
-                onClick={() => setShowNameModal(false)}
-                className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider text-[#777777] hover:text-white cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowNameModal(false)}
-                className="px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest bg-[#F2F2F2] text-[#050505] hover:bg-white shadow-[0_0_16px_rgba(255,255,255,0.2)] cursor-pointer"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Danger Zone Action Modal */}
-      {dangerAction && (
-        <div className="fixed inset-0 z-[95] bg-[#050505]/95 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0d0d0d] w-full max-w-sm rounded-2xl p-6 border border-red-900/40 shadow-2xl text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-red-950/50 text-red-400 border border-red-900/40 flex items-center justify-center mx-auto">
-              <span className="material-symbols-outlined text-2xl">warning</span>
-            </div>
-            <h3 className="font-black text-base text-[#F2F2F2] uppercase tracking-tight">
-              {dangerAction === 'leave' ? 'LEAVE DESIGN SQUAD?' : 'DELETE DESIGN SQUAD?'}
-            </h3>
-            <p className="text-xs text-[#888888] leading-relaxed">
-              {dangerAction === 'leave'
-                ? "You will lose access to all shared photos, logs, and circles until an admin re-invites you."
-                : "This action is permanent and cannot be reversed. All shared media, chat logs, and roster permissions will be wiped."}
-            </p>
-            <div className="flex gap-2 justify-center pt-3">
-              <button
-                onClick={() => setDangerAction(null)}
-                className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider text-[#777777] hover:text-white cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  alert(dangerAction === 'leave' ? 'Left group successfully.' : 'Group deleted.');
-                  setDangerAction(null);
-                  onNavigate('landing');
-                }}
-                className="px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest bg-red-600 hover:bg-red-500 text-white cursor-pointer"
-              >
-                Confirm {dangerAction === 'leave' ? 'Leave' : 'Delete'}
-              </button>
-            </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#888]">Tagline / Bio</label>
+                <textarea
+                  value={descInput}
+                  onChange={(e) => setDescInput(e.target.value)}
+                  rows={3}
+                  className="w-full bg-[#141414] border border-[#262626] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-[#555] focus:outline-none focus:border-white resize-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-[#888]">Privacy Access</label>
+                <div className="flex gap-2">
+                  {(['invite-only', 'members-approval', 'open'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPrivacyInput(p)}
+                      className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border cursor-pointer ${
+                        privacyInput === p
+                          ? 'bg-white text-black border-white'
+                          : 'bg-[#141414] text-[#888] border-[#262626]'
+                      }`}
+                    >
+                      {p.replace('-', ' ')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#222]">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-xs font-black uppercase text-[#777] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-xl bg-white text-black font-black text-xs uppercase tracking-wider shadow-md hover:bg-white/90"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

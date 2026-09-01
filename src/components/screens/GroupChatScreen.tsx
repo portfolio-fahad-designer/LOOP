@@ -1,23 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ScreenType, ChatMessage } from '../../types';
-import { currentUser, allUsers } from '../../data/mockData';
+import React, { useState, useRef, useEffect } from 'react';
+import { ScreenType } from '../../types';
+import { useApp } from '../../context/AppContext';
+import { VideoCallModal } from '../VideoCallModal';
+import { sound } from '../../utils/sound';
 
 interface GroupChatScreenProps {
-  messages: ChatMessage[];
-  onSendMessage: (msg: ChatMessage) => void;
   onNavigate: (screen: ScreenType) => void;
 }
 
-export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
-  messages,
-  onSendMessage,
-  onNavigate,
-}) => {
+export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({ onNavigate }) => {
+  const {
+    currentUser,
+    currentSquad,
+    chatMessages,
+    sendMessage,
+    showToast,
+  } = useApp();
+
   const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
-  const [showCallModal, setShowCallModal] = useState(false);
+  const [attachedImage, setAttachedImage] = useState<string>('');
   const [replyingTo, setReplyingTo] = useState<{ senderName: string; text: string } | null>(null);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceSeconds, setVoiceSeconds] = useState(0);
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const voiceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,287 +35,354 @@ export const GroupChatScreen: React.FC<GroupChatScreenProps> = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [chatMessages]);
 
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
-
-    const newMsg: ChatMessage = {
-      id: `m-${Date.now()}`,
-      sender: currentUser,
-      isUser: true,
-      text: inputText.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      replyTo: replyingTo || undefined,
-      status: 'read',
-    };
-
-    onSendMessage(newMsg);
-    setInputText('');
-    setReplyingTo(null);
-
-    // Simulate smart team response
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      const responses = [
-        "Love this direction! Let's lock in the specs for Friday's sprint review. 🚀",
-        "Pushed the latest design tokens to Figma. Check the 'Cyberpunk Vibe' page!",
-        "Agreed! Dropping the updated SVG assets into the shared gallery now.",
-        "Just tested this on an OLED display, the contrast is unreal.",
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      const botMsg: ChatMessage = {
-        id: `m-${Date.now() + 1}`,
-        sender: Math.random() > 0.5 ? allUsers.alex : allUsers.chloe,
-        isUser: false,
-        text: randomResponse,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setAttachedImage(reader.result);
+          showToast('Image ready to send');
+        }
       };
-      onSendMessage(botMsg);
-    }, 2500);
+      reader.readAsDataURL(file);
+    }
   };
 
+  const handleSendMessage = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!inputText.trim() && !attachedImage) return;
+
+    sendMessage(
+      inputText.trim(),
+      attachedImage || undefined,
+      replyingTo ? replyingTo : undefined
+    );
+
+    setInputText('');
+    setAttachedImage('');
+    setReplyingTo(null);
+  };
+
+  const startVoiceRecording = () => {
+    setIsRecordingVoice(true);
+    setVoiceSeconds(0);
+    sound.playPop();
+    voiceTimerRef.current = setInterval(() => {
+      setVoiceSeconds((sec) => sec + 1);
+    }, 1000);
+  };
+
+  const finishVoiceRecording = () => {
+    if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
+    setIsRecordingVoice(false);
+    sound.playSend();
+    sendMessage(`🎤 Voice Note (${voiceSeconds}s)`);
+    showToast('Voice memo transmitted');
+  };
+
+  const cancelVoiceRecording = () => {
+    if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
+    setIsRecordingVoice(false);
+    setVoiceSeconds(0);
+    sound.playPop();
+  };
+
+  const quickPrompts = [
+    'Hey team! ⚡',
+    'Figma tokens updated ✨',
+    'Let’s hop on a sync 📞',
+    'Soundcheck in 10 mins 🎛️',
+  ];
+
   return (
-    <div className="bg-[#050505] text-[#F2F2F2] min-h-screen flex flex-col antialiased">
-      {/* TopAppBar */}
-      <header className="fixed top-10 left-0 w-full z-40 bg-[#050505]/95 backdrop-blur-xl border-b border-[#262626] flex justify-between items-center px-4 py-2 h-16">
-        <button
-          onClick={() => onNavigate('feed')}
-          className="text-[#999999] hover:text-[#F2F2F2] transition-colors flex items-center justify-center p-2 rounded-full cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[20px]" data-icon="arrow_back">arrow_back</span>
-        </button>
-
-        <div className="flex flex-col items-center flex-1 cursor-pointer" onClick={() => onNavigate('settings')}>
-          <div className="flex items-center gap-2">
-            <h1 className="font-black text-base tracking-tight text-[#F2F2F2] uppercase">
-              DESIGN SQUAD
-            </h1>
-            <span className="text-[9px] font-mono text-[#888888] bg-[#141414] border border-[#262626] px-1.5 py-0.2 rounded">
-              ENCRYPTED
-            </span>
-          </div>
-          <p className="text-[10px] text-[#777777] font-mono flex items-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F2F2F2] animate-pulse"></span>
-            4 MEMBERS ACTIVE
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowCallModal(true)}
-          className="text-[#999999] hover:text-[#F2F2F2] transition-colors flex items-center justify-center p-2 rounded-full cursor-pointer"
-          title="Start Squad Video Call"
-        >
-          <span className="material-symbols-outlined text-[20px]" data-icon="videocam">videocam</span>
-        </button>
-      </header>
-
-      {/* Chat Messages Canvas */}
-      <main className="flex-1 overflow-y-auto no-scrollbar pt-28 pb-44 px-4 max-w-2xl mx-auto w-full flex flex-col gap-4">
-        {/* Date divider */}
-        <div className="flex justify-center my-2">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-[#777777] bg-[#121212] px-4 py-1 rounded-full border border-[#262626]">
-            TODAY // SESSION LOG
-          </span>
-        </div>
-
-        {/* Message Items */}
-        {messages.map((msg) => {
-          if (msg.isUser) {
-            // User message (Right-aligned)
-            return (
-              <div key={msg.id} className="flex flex-col items-end gap-1 max-w-[85%] self-end mt-1">
-                {msg.replyTo && (
-                  <div className="text-[10px] font-mono text-[#999999] bg-[#141414] px-3 py-1 rounded-t-lg border-l-2 border-[#F2F2F2] mr-1">
-                    Replying to {msg.replyTo.senderName}: "{msg.replyTo.text}"
-                  </div>
-                )}
-                <div className="bg-[#F2F2F2] text-[#050505] px-4 py-3 rounded-2xl rounded-br-sm shadow-[0_0_20px_rgba(255,255,255,0.15)]">
-                  {msg.text && <p className="text-sm font-semibold leading-relaxed">{msg.text}</p>}
-                </div>
-                <div className="mr-1 text-[10px] text-[#777777] font-mono flex items-center gap-1">
-                  <span>{msg.time}</span> • 
-                  <span className="material-symbols-outlined text-[13px] text-[#F2F2F2]">done_all</span>
-                </div>
-              </div>
-            );
-          }
-
-          // Friend Message (Left-aligned)
-          return (
-            <div key={msg.id} className="flex flex-col items-start gap-1 max-w-[85%] self-start mt-1 group">
-              <div className="flex items-end gap-2.5">
+    <div className="bg-[#050505] text-[#F2F2F2] min-h-screen flex flex-col pb-20">
+      {/* Top Chat Action Bar (below global navbar) */}
+      <header className="bg-[#080808]/95 backdrop-blur-lg fixed top-16 left-0 w-full z-30 border-b border-[#262626] h-14 flex items-center shadow-lg">
+        <div className="flex justify-between items-center px-4 w-full max-w-3xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
                 <img
-                  src={msg.sender.avatar}
-                  alt={msg.sender.name}
-                  className="w-8 h-8 rounded-full object-cover shrink-0 border border-[#333333] shadow"
+                  src={currentSquad.avatar}
+                  alt={currentSquad.name}
+                  className="w-8 h-8 rounded-full object-cover border border-[#333333]"
                 />
-
-                <div className="flex flex-col gap-1">
-                  {/* Reply preview if available */}
-                  {msg.replyTo && (
-                    <div className="flex items-center gap-2 pl-2 pb-0.5 opacity-80">
-                      <span className="material-symbols-outlined text-[13px] text-[#777777]">reply</span>
-                      <div className="bg-[#121212] px-2 py-0.5 rounded text-[10px] font-mono border border-[#262626] truncate max-w-[200px]">
-                        <span className="text-[#F2F2F2] font-black uppercase">{msg.replyTo.senderName}:</span>
-                        <span className="text-[#888888] ml-1">{msg.replyTo.text}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Text Message */}
-                  {msg.text && (
-                    <div className="bg-[#121212] text-[#F2F2F2] px-4 py-3 rounded-2xl rounded-bl-sm border border-[#262626] shadow">
-                      <p className="text-sm font-medium leading-relaxed">{msg.text}</p>
-                    </div>
-                  )}
-
-                  {/* Image Attachment */}
-                  {msg.imageUrl && (
-                    <div className="bg-[#121212] p-1.5 rounded-2xl rounded-bl-sm border border-[#262626] shadow">
-                      <div className="relative w-56 sm:w-64 h-72 rounded-xl overflow-hidden">
-                        <img
-                          src={msg.imageUrl}
-                          alt="Shared media"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <span className="absolute bottom-0 right-0 w-2 h-2 bg-[#00FF66] border-2 border-[#050505] rounded-full"></span>
               </div>
-
-              <div className="ml-11 text-[10px] text-[#777777] font-mono flex items-center gap-2">
-                <span className="uppercase font-bold text-[#AAAAAA]">{msg.sender.name}</span> • <span>{msg.time}</span>
-                <button
-                  onClick={() => setReplyingTo({ senderName: msg.sender.name, text: msg.text || 'Photo' })}
-                  className="opacity-0 group-hover:opacity-100 hover:text-[#F2F2F2] text-[9px] uppercase tracking-widest font-black transition-opacity cursor-pointer"
-                >
-                  REPLY
-                </button>
+              <div>
+                <h1 className="font-black text-xs text-[#F2F2F2] uppercase tracking-tight">
+                  {currentSquad.name} // VOX ENCRYPTED
+                </h1>
+                <p className="text-[9px] text-[#777777] font-mono">
+                  {currentSquad.memberCount} OPERATORS ONLINE
+                </p>
               </div>
             </div>
-          );
-        })}
-
-        {/* Typing Indicator */}
-        {isTyping && (
-          <div className="flex items-center gap-2.5 mt-2 ml-11">
-            <div className="flex gap-1.5 bg-[#141414] px-3 py-2 rounded-full items-center border border-[#262626] shadow-sm">
-              <div className="w-1.5 h-1.5 bg-[#F2F2F2] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
-              <div className="w-1.5 h-1.5 bg-[#F2F2F2] rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-              <div className="w-1.5 h-1.5 bg-[#F2F2F2] rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-            </div>
-            <span className="text-[11px] text-[#777777] font-mono">CHLOE IS TYPING...</span>
           </div>
-        )}
 
-        <div ref={messagesEndRef} />
-      </main>
-
-      {/* Reply Banner */}
-      {replyingTo && (
-        <div className="fixed bottom-[140px] left-0 right-0 max-w-2xl mx-auto px-4 z-40">
-          <div className="bg-[#141414] border border-[#262626] rounded-t-xl px-4 py-2.5 flex items-center justify-between text-xs text-[#F2F2F2] shadow-lg">
-            <span className="truncate font-mono text-[11px]">
-              Replying to <b className="text-[#F2F2F2] font-black uppercase">{replyingTo.senderName}</b>: "{replyingTo.text}"
-            </span>
-            <button onClick={() => setReplyingTo(null)} className="p-1 text-[#888888] hover:text-[#F2F2F2] cursor-pointer">
-              <span className="material-symbols-outlined text-[16px]">close</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsVideoCallOpen(true)}
+              className="px-3 py-1.5 rounded-full bg-[#161616] hover:bg-[#222222] border border-[#333333] text-white flex items-center gap-1.5 text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md"
+            >
+              <span className="material-symbols-outlined text-[16px] text-[#00FF66]">videocam</span>
+              <span className="hidden sm:inline">Join Call</span>
+            </button>
+            <button
+              onClick={() => onNavigate('members')}
+              className="p-1.5 text-[#999999] hover:text-[#F2F2F2] rounded-full cursor-pointer"
+              title="Members"
+            >
+              <span className="material-symbols-outlined text-[18px]">group</span>
             </button>
           </div>
         </div>
-      )}
+      </header>
 
-      {/* Chat Input Bar */}
-      <div className="fixed bottom-20 left-0 right-0 z-40 px-4 py-2 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent pointer-events-none">
-        <form
-          onSubmit={handleSend}
-          className="bg-[#121212] rounded-full flex items-center p-1.5 max-w-2xl mx-auto pointer-events-auto shadow-2xl border border-[#262626]"
-        >
-          <button
-            type="button"
-            onClick={() => {
-              const sampleUrl = 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsXPWjo8M_jJgn881gWHCmUgauRApULiQgMRgFpKT3Alh55oOeSk9LtIrvLrZfA1uQP4PN7zqvgTRGdYi8bBbY9rID50oB1RqUlwDOPFtvkM5TKFjIBKsGq5WrssV1cd7XMkUgFMG_dP2mvp2JeHo6yBRG86LTM6P27BdtiudjmKjVupB1GkEwTcJXRMIwjpU2jsT1uPvM8w6UPqw4tV2GEZ49xN_EjkukZAVWXq01_4EHEzL_RNY';
-              const photoMsg: ChatMessage = {
-                id: `m-${Date.now()}`,
-                sender: currentUser,
-                isUser: true,
-                imageUrl: sampleUrl,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                status: 'read',
-              };
-              onSendMessage(photoMsg);
-            }}
-            className="p-2 text-[#888888] hover:text-[#F2F2F2] transition-colors flex-shrink-0 cursor-pointer"
-            title="Attach Media Preview"
+      {/* Messages Canvas */}
+      <main className="flex-1 pt-36 pb-28 px-4 max-w-3xl w-full mx-auto flex flex-col gap-4 overflow-y-auto">
+        {/* Encrypted Channel Notice */}
+        <div className="flex flex-col items-center justify-center my-2 text-center">
+          <div className="inline-flex items-center gap-1.5 bg-[#0e0e0e] border border-[#222222] px-3 py-1 rounded-full text-[10px] font-mono text-[#777777]">
+            <span className="material-symbols-outlined text-[13px] text-[#00FF66]">lock</span>
+            <span>END-TO-END ENCRYPTED CIRCLE VAULT</span>
+          </div>
+        </div>
+
+        {/* Message bubbles */}
+        {chatMessages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex flex-col ${msg.isUser ? 'items-end' : 'items-start'} group`}
           >
-            <span className="material-symbols-outlined text-[20px]">add_circle</span>
-          </button>
+            {/* Sender Name if not user */}
+            {!msg.isUser && (
+              <div className="flex items-center gap-2 mb-1 px-1">
+                <img
+                  src={msg.sender.avatar}
+                  alt={msg.sender.name}
+                  className="w-4 h-4 rounded-full object-cover border border-[#333]"
+                />
+                <span className="text-[10px] font-black uppercase text-[#888888] tracking-wider">
+                  {msg.sender.name}
+                </span>
+                <span className="text-[9px] font-mono text-[#555555]">{msg.time}</span>
+              </div>
+            )}
 
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            className="flex-1 bg-transparent border-none text-sm text-[#F2F2F2] placeholder:text-[#666666] focus:ring-0 focus:outline-none px-3 py-2 font-sans"
-            placeholder="Type your message to Design Squad..."
-          />
+            {/* Replying banner if present */}
+            {msg.replyTo && (
+              <div className={`text-[10px] font-mono px-3 py-1 mb-1 rounded-lg border max-w-sm ${
+                msg.isUser
+                  ? 'bg-[#181818] border-[#333333] text-[#AAAAAA] text-right'
+                  : 'bg-[#141414] border-[#262626] text-[#888888]'
+              }`}>
+                Replying to <strong>{msg.replyTo.senderName}</strong>: {msg.replyTo.text}
+              </div>
+            )}
 
-          <button
-            type="button"
-            onClick={() => setInputText((prev) => prev + ' ⚡🔥')}
-            className="p-2 text-[#888888] hover:text-[#F2F2F2] transition-colors flex-shrink-0 cursor-pointer"
-            title="Emoji"
-          >
-            <span className="material-symbols-outlined text-[20px]">mood</span>
-          </button>
+            {/* Bubble */}
+            <div
+              className={`relative max-w-md rounded-2xl p-3.5 sm:p-4 text-xs font-sans leading-relaxed shadow-lg ${
+                msg.isUser
+                  ? 'bg-[#F2F2F2] text-[#050505] font-medium rounded-tr-none'
+                  : 'bg-[#121212] text-[#E0E0E0] border border-[#262626] rounded-tl-none'
+              }`}
+            >
+              {/* Optional image in message */}
+              {msg.imageUrl && (
+                <div 
+                  onClick={() => setLightboxImage(msg.imageUrl!)}
+                  className="rounded-xl overflow-hidden mb-2 border border-black/10 cursor-pointer"
+                >
+                  <img src={msg.imageUrl} alt="Attached visual" className="w-full h-auto max-h-56 object-cover" />
+                </div>
+              )}
 
-          <button
-            type="submit"
-            disabled={!inputText.trim()}
-            className="bg-[#F2F2F2] text-[#050505] w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 hover:scale-105 active:scale-95 transition-all ml-1 disabled:opacity-30 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">send</span>
-          </button>
-        </form>
-      </div>
+              {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
+
+              {/* Timestamp & status */}
+              <div className={`flex items-center justify-end gap-1 mt-1 text-[9px] font-mono ${
+                msg.isUser ? 'text-black/50' : 'text-[#666666]'
+              }`}>
+                <span>{msg.time}</span>
+                {msg.isUser && (
+                  <span className="material-symbols-outlined text-[13px] text-black">
+                    done_all
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Action Bar on hover */}
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 mt-1 px-1">
+              <button
+                onClick={() => setReplyingTo({ senderName: msg.sender.name, text: msg.text || 'Image' })}
+                className="text-[10px] font-mono text-[#777777] hover:text-white flex items-center gap-0.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[13px]">reply</span> Reply
+              </button>
+              <button
+                onClick={() => sendMessage(`🔥 to "${msg.text?.slice(0, 20) || 'message'}..."`)}
+                className="text-[10px] text-[#777777] hover:text-white cursor-pointer"
+              >
+                🔥
+              </button>
+              <button
+                onClick={() => sendMessage(`⚡ to "${msg.text?.slice(0, 20) || 'message'}..."`)}
+                className="text-[10px] text-[#777777] hover:text-white cursor-pointer"
+              >
+                ⚡
+              </button>
+            </div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </main>
+
+      {/* Hidden File Picker */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Bottom Fixed Input Dock */}
+      <footer className="fixed bottom-0 left-0 w-full bg-[#050505]/95 backdrop-blur-xl border-t border-[#262626] p-3 z-40">
+        <div className="max-w-3xl mx-auto space-y-2">
+          {/* Quick Prompts */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-0.5">
+            {quickPrompts.map((prompt, i) => (
+              <button
+                key={i}
+                onClick={() => sendMessage(prompt)}
+                className="px-3 py-1 rounded-full text-[10px] font-mono uppercase bg-[#141414] hover:bg-[#202020] border border-[#2a2a2a] text-[#AAAAAA] hover:text-white shrink-0 transition-colors cursor-pointer"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          {/* Replying banner */}
+          {replyingTo && (
+            <div className="flex items-center justify-between bg-[#141414] border border-[#333333] px-3 py-1.5 rounded-xl text-xs text-[#CCCCCC]">
+              <div className="flex items-center gap-2 truncate">
+                <span className="material-symbols-outlined text-sm text-[#AAAAAA]">reply</span>
+                <span className="font-mono text-[10px] text-[#888888]">Replying to {replyingTo.senderName}:</span>
+                <span className="truncate max-w-xs">{replyingTo.text}</span>
+              </div>
+              <button onClick={() => setReplyingTo(null)} className="text-[#888888] hover:text-white">
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+          )}
+
+          {/* Attached image preview */}
+          {attachedImage && (
+            <div className="relative inline-block border border-[#333333] rounded-xl overflow-hidden">
+              <img src={attachedImage} alt="Attachment" className="h-16 w-24 object-cover" />
+              <button
+                onClick={() => setAttachedImage('')}
+                className="absolute top-1 right-1 p-0.5 bg-black/70 rounded-full text-white hover:bg-black"
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+              </button>
+            </div>
+          )}
+
+          {/* Input Bar */}
+          {isRecordingVoice ? (
+            <div className="flex items-center justify-between bg-[#1f0a0a] border border-[#ff4444] rounded-full px-4 py-2.5 animate-pulse">
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-[#ff3333] animate-ping"></span>
+                <span className="font-mono text-xs text-[#ffaaaa] uppercase font-black tracking-widest">
+                  RECORDING VOX MEMO • 00:0{voiceSeconds}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={cancelVoiceRecording}
+                  className="px-3 py-1 text-xs text-[#ff8888] hover:text-white font-mono uppercase cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={finishVoiceRecording}
+                  className="px-4 py-1 bg-[#ff4444] text-white text-xs font-black uppercase tracking-wider rounded-full hover:bg-[#ff5555] cursor-pointer"
+                >
+                  Transmit
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2.5 text-[#888888] hover:text-white rounded-full bg-[#121212] hover:bg-[#1c1c1c] border border-[#262626] transition-colors cursor-pointer"
+                title="Attach photo"
+              >
+                <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={startVoiceRecording}
+                className="p-2.5 text-[#888888] hover:text-white rounded-full bg-[#121212] hover:bg-[#1c1c1c] border border-[#262626] transition-colors cursor-pointer"
+                title="Record Voice Memo"
+              >
+                <span className="material-symbols-outlined text-[18px]">mic</span>
+              </button>
+
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Broadcast a message to squad..."
+                className="flex-1 bg-[#121212] border border-[#262626] rounded-full px-4 py-2.5 text-xs text-[#F2F2F2] placeholder:text-[#555555] focus:outline-none focus:border-[#666666] font-sans"
+              />
+
+              <button
+                type="submit"
+                disabled={!inputText.trim() && !attachedImage}
+                className="p-2.5 rounded-full bg-[#F2F2F2] text-[#050505] hover:bg-white disabled:opacity-30 active:scale-95 transition-all shadow-[0_0_12px_rgba(255,255,255,0.2)] cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">send</span>
+              </button>
+            </form>
+          )}
+        </div>
+      </footer>
 
       {/* Video Call Modal */}
-      {showCallModal && (
-        <div className="fixed inset-0 z-[95] bg-[#050505]/90 backdrop-blur-lg flex items-center justify-center p-4">
-          <div className="bg-[#0d0d0d] w-full max-w-md rounded-2xl p-6 border border-[#262626] shadow-2xl text-center space-y-6">
-            <div className="w-16 h-16 rounded-full bg-[#1a1a1a] border border-[#333333] mx-auto flex items-center justify-center">
-              <span className="material-symbols-outlined text-[#F2F2F2] text-3xl">videocam</span>
-            </div>
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#777777]">HUDDLE INITIATED</span>
-              <h3 className="font-black text-xl text-[#F2F2F2] uppercase tracking-tight mt-1">SQUAD AUDIO & VIDEO</h3>
-              <p className="text-xs text-[#888888] mt-1">Connecting 4 members to encrypted room...</p>
-            </div>
-            <div className="flex justify-center gap-3">
-              <img className="w-12 h-12 rounded-full border border-[#444444] object-cover" src={allUsers.alex.avatar} alt="Alex" />
-              <img className="w-12 h-12 rounded-full border border-[#444444] object-cover" src={allUsers.chloe.avatar} alt="Chloe" />
-              <img className="w-12 h-12 rounded-full border border-[#444444] object-cover" src={allUsers.leo.avatar} alt="Leo" />
-            </div>
-            <div className="flex gap-3 justify-center pt-2">
-              <button
-                onClick={() => setShowCallModal(false)}
-                className="px-6 py-2.5 rounded-full bg-[#1a1a1a] text-[#888888] border border-[#262626] font-black text-[11px] uppercase tracking-widest hover:text-white transition-colors cursor-pointer"
-              >
-                Dismiss
-              </button>
-              <button
-                onClick={() => {
-                  alert('Audio and Video stream connected!');
-                  setShowCallModal(false);
-                }}
-                className="px-6 py-2.5 rounded-full bg-[#F2F2F2] text-[#050505] font-black text-[11px] uppercase tracking-widest hover:bg-white transition-colors cursor-pointer"
-              >
-                Join Room
-              </button>
-            </div>
+      <VideoCallModal
+        isOpen={isVideoCallOpen}
+        onClose={() => setIsVideoCallOpen(false)}
+      />
+
+      {/* Lightbox for chat images */}
+      {lightboxImage && (
+        <div 
+          onClick={() => setLightboxImage(null)}
+          className="fixed inset-0 z-[90] bg-[#050505]/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
+          <div className="relative max-w-2xl max-h-[85vh]">
+            <button
+              onClick={() => setLightboxImage(null)}
+              className="absolute top-4 right-4 p-2 bg-[#141414] border border-[#333333] rounded-full text-[#F2F2F2] hover:bg-white hover:text-black cursor-pointer z-10"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <img
+              src={lightboxImage}
+              alt="Expanded visual"
+              className="rounded-2xl max-h-[80vh] object-contain border border-[#333333] shadow-2xl"
+            />
           </div>
         </div>
       )}
