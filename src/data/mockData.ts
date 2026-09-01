@@ -1,0 +1,333 @@
+import { User, Post, GalleryHighlight, GalleryItem, ChatMessage, Circle } from '../types';
+
+export const currentUser: User = {
+  id: 'u1',
+  name: 'Alex Rivers',
+  username: 'arivers_loop',
+  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCD9gUoUo1JhpMnhizDGGNxl2eoEgzi0WlQX7U1ZVlnG97Myxu5WxZaLJd5b43ixwmmh0YETSHfYm8iWTsghJ3UiHSiJZzZ2j2FdU56sSDBTcrFrpiO-yKCQq8tBRMWlWa8CXUY7-tl-CVx30-Y2OybGtEJn09tSojHTrXO8OJzEwbdkuRfRQ6IFclh_3te8DnLH5ird7YSG7KEipM-pVTEwBrubmjXV17Z8s4rSW_o8dhHemlHYfk',
+  bio: 'Just here for the chaos. 🎨 Designer & curator of high-vibe squads.',
+  groupsCount: 12,
+  postsCount: 156,
+  likesCount: '8.4k',
+};
+
+export const allUsers: Record<string, User> = {
+  alex: {
+    id: 'u1',
+    name: 'Alex',
+    username: 'alex_loop',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAnZb3EyfIMVWmPRLgM8uoKFreOFoTyObwo8QqwEzsvhr_nbXHrrQVoOsWudPNbVVuKeL9MaMWy-Q4N-9uAPiEyuPKEbfSmCOX6KGh-m9u-inAukJLzVnqrHO15V0UIHczMHYdl_jIJHpYwxTQw5zH3NBs24pAUtIJwcX7y-OZoZ9rE4vsKVaZwr_e-rHGcq1OaBTVmD0roOoK5iS3u_Rf_yI7BAYEQZ10jkVlTAmDOioIgxKvvXk0',
+  },
+  chloe: {
+    id: 'u2',
+    name: 'Chloe',
+    username: 'chloe_glow',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAmvCfrHkoSnxokJFqOYgOrLPTyXZEeH2KHlqJldY46-J9FdKEwwu5sHfXMfvPkUVTVI3U7VRM7gWGmAzoWZjyJZi1Zsv6Se5niSy3k01a7feIDsopyFPno9EIoI1IOmRDq2CnlComHBfeyyUEflsTZLq3tXO3vAMeUVcBBk8k19NVxn754oVAcCcyabWM31Y8aXg0POkgvUJoCyIvzzNSdfMcWXgTXlgQkuSg_96KzYrFPlQbgkLw',
+  },
+  leo: {
+    id: 'u3',
+    name: 'Leo',
+    username: 'leo_ux',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBzMspz__lUkc3tK4pHkjVGK3jBDRHw559rtDiD98OeQ6NN0LS73g0qQ8ItRJN3SE-9rvaNmMYu0OMhVZDfdg_H8AnfEA49T68KnlsX6QB7Gxrjuocmh4wbyCMVEh9nfJONMClYB8VhrWj0nLmBDk8sLoiUpc3COpks0Ir9Lp49uMQOFKOPdEaRHpE5Ekq7CdrVJ0I7olu_oCyIEpbv3X1M9sHRzkOC4mazSfleczcnpkqKKMhi9tU',
+    role: 'admin',
+  },
+  sarah: {
+    id: 'u4',
+    name: 'Sarah',
+    username: 'sarah_vibes',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuACfRzZ5-V-ZPq42UEWK5FWrDGhdOKRIg_yZ-VmMMqTrF_l8C9cCJrwVjSR1Iy7nNEP2AM1H2J9O6NGPJTj9Krf4NtwSuBmWpwnNt71YPGaLwYUluICJN4XOD-dUKYAT4mjB7UCvo13TxIRHrvGTnr47b1s0krkqWkQSlXGzGGedF7ASHeRhQUdiqH9qbHeWeLXtyCeRJdOFVlwt1PkfVhQfxwN1FKoNOGlM0yg7hlRIObT4mVltIw',
+  },
+  david: {
+    id: 'u5',
+    name: 'David',
+    username: 'david_ui',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAVaVZOhueaH4AB_-Vq7Yn_ZUuWQo1p12I7Phr8VdwdxvnpEDIGImdskoTnuwxpZhT3CJRc2-cl79Go359AzjP0F7tme-dPuI9KH6a_mKgcWelK2_xy0OTObyKFe6SwH_2ulFYDQtphk7twQXzIJNgrKyKnUY2A9HmaockuBa4TfQt1pW195zPapIi5Z-wLs0fN6V8nz5XS22oRz6JwSTXFAhbDhWFKl0hrNBwXfQ8O1sghkcGj8hw',
+  },
+  mia: {
+    id: 'u6',
+    name: 'Mia Wallace',
+    username: 'mia_designs',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABtoPQltNRg5LSngUY1u6Aygd_emNaaayMyd0VFd97Awz1uErZU7W2YlmqC0hNadtOBcE5w7qKT_tNmkKO9gPIQHKiLu7cLCwf1zskv64fYG1uq7g6S-_OzSkV3lFCllXZDco2EKl3gR82Mc7id2ugHOYYt6qMh3IhsVSQ5GW-76FB3zNEd7vqaLMZp1RALIccZb8J_PoI5TdBIHy5nXqQJVPdycjsFnFgpxr2s5v1OfiDDzd9mgM',
+    role: 'owner',
+    verified: true,
+  },
+  zoe: {
+    id: 'u7',
+    name: 'Zoe Chen',
+    username: 'z_renders',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCxx8v92eJ4zoaONmMNBdtSM86pf-bRV2jmSzRvBlvpZ8tYRJeAs29gSyblCtsz4sifJ7IktEgETQ3cTbRIHdoYSoV8c0ZEnEs_clolBH2WJ2fYC_PuIzj11Mc8pHKmaZpmp3TXxrCnQGufBWBLQcZOuHyVTGrAWCYg3j5z3KaLf_L_7Gxo9_k-743InphPQRBiRkkZnJAliu3xvvEYsPE8gfzIA4mdpWY9GsyNhMaDHDYuiqlgkB4',
+    role: 'admin',
+  },
+  sam: {
+    id: 'u8',
+    name: 'Sam Taylor',
+    username: 'sammy_t',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAvkDrZ2ngaWxQBxm9rCDaxQ5EAiCh8SPs4zY38lBInlhR1yrOqmqpIsA-qgcIAxR52RZwfyN9hQdfD3eMMACwdgW5gbDzS1KYUfaANAgM24klXOLp478MHWWkLe7l_eZ1cTilywof6i0q5ItELSM0Uxa85vuttdAIZ-k-uhZVkN5ljhFaKkrCMqQ81c-S8-LscTYhOIemMFpLecf3l80oeiqip-RNkESlPICZGB1T_SW7gK2JUyzk',
+    role: 'member',
+    isOnline: true,
+  },
+  jules: {
+    id: 'u9',
+    name: 'Jules Vance',
+    username: 'jules_v',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCaWB72WjPeP3uz8C_82CINAOOahVT3VAb5xUTeMHwfSwTot1HtIxnoNq8FIwOwKyDlCAv4wsj4FJx5RoQWXoVgSF3I6dQYlEo_lCrScx7p5ihthYUTRHjiayn5wwItRDunAfQdmwC0MQkfqqgA7ednjzMj4C9GLrdgjEbfuWCJr3iF8QjeAUgQpgbJblwGjfUSY7ke28tkjztOw8E27g254vffcMwnC0VXrs0HnIx4Q0QasQzyDv4',
+    role: 'member',
+  },
+  robert: {
+    id: 'u10',
+    name: 'Robert Fox',
+    username: 'rfox_design',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBQL-iYBi1z61O_LkyY2DcRN2SyZaWHPeT8xiswNwKMnexXcR_lrVJ14ZeV5xpOeDFP4H7M44bjYCHuBYmBvLezBV3l6hdxvmdDvBPIG7RwegKDzkGlLI0pLfP9iWo6deLrJSiODt60LIxB5OQNQw8pxK8Kz285ENC05aKdbmJWeba-b4m-xqnRWcY1vw97jOnKRtIynUD_EwfheEoQELpoqRMU5oykBfX5ujclLfga6tbrCI1Zx7E',
+    role: 'member',
+  },
+  bot404: {
+    id: 'u11',
+    name: 'Bot-404',
+    username: 'bot_404',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB5YruvL2WxB_fveC2qjd1OJWpcJrdfC0JS5q8mmlFwM2Jmkbl1F2CEt_NFnMXMgVWtia2WNXiRwWNJ1BPo8pxIrUDEx2sY7CyfNGHvyOi3TJxunzlqxh2BiPVdZGagWMOQCUzwmndMRvBQzJjSdfvy6R0gZxzXmdTOUYQiDHOcF7HgVe_jPuGPVrp_SAq1DxItX4sOSd0fWpe6d4WJ-6xmQEaZUhuSdFvCWLmcBfaebFG-hUJiMdQ',
+    role: 'member',
+    isMuted: true,
+  },
+};
+
+export const initialPosts: Post[] = [
+  {
+    id: 'p1',
+    author: allUsers.alex,
+    timeAgo: '2 hours ago',
+    content: 'Just aced my final exam! 🎉 Tonight we celebrate. Who\'s in?',
+    reactions: [{ emoji: '😂', count: 12, active: true }],
+    commentsCount: 3,
+    sharesCount: 1,
+    commentsList: [
+      {
+        id: 'c1',
+        author: allUsers.chloe,
+        content: 'Count me in! What venue are we hitting?',
+        timeAgo: '1 hour ago',
+        likes: 4,
+      },
+      {
+        id: 'c2',
+        author: allUsers.leo,
+        content: 'Huge congrats Alex! Let\'s gooo 🥂',
+        timeAgo: '45 mins ago',
+        likes: 2,
+      },
+    ],
+  },
+  {
+    id: 'p2',
+    author: allUsers.chloe,
+    timeAgo: '5 hours ago',
+    content: 'About last night... absolute chaos in the best way possible 💫',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUlAhyo2m-TC5N-LmVd6eIiqviXg2OTkFEg5TMsi6oUF-ksO3Pi0GpyImCDYdN9-TlETUctbOCLuHxOhWFLTzy7hUf2ofAFAkeIhCAqU4SpOryqMAIvHtg45ZXU0s8CqOnBaHa_SJ6ar6GhPm0QuF3rNDLDJ7oRlGtTCa1KcK-UPQsckJf4E_DxLCNsiBCWl4-eHAUTY3_M5bBnY5iLZSFg8nw6UhMphsD6ogxofRHpSjyItMtmcA',
+    reactions: [
+      { emoji: '❤️', count: 18, active: true },
+      { emoji: '🔥', count: 6, active: true },
+    ],
+    commentsCount: 8,
+    commentsList: [
+      {
+        id: 'c3',
+        author: allUsers.david,
+        content: 'The lighting in this venue was legendary!',
+        timeAgo: '3 hours ago',
+        likes: 5,
+      },
+    ],
+  },
+  {
+    id: 'p3',
+    author: allUsers.leo,
+    timeAgo: '8 hours ago',
+    content: 'What should we play tonight? 🎮',
+    poll: {
+      question: 'What should we play tonight? 🎮',
+      totalVotes: 20,
+      endsIn: '4 hrs',
+      options: [
+        { id: 'opt1', text: 'Minecraft', votes: 9 },
+        { id: 'opt2', text: 'Roblox', votes: 4 },
+        { id: 'opt3', text: 'GTA', votes: 2 },
+        { id: 'opt4', text: 'Valorant', votes: 5 },
+      ],
+    },
+    commentsCount: 1,
+  },
+];
+
+export const profilePosts: Post[] = [
+  {
+    id: 'prof1',
+    author: currentUser,
+    groupName: 'Design Squad',
+    timeAgo: '2 hours ago in Design Squad',
+    content: "Last night's visual setup was absolutely insane. The neon layers overlapping with the fog machine? Masterclass in atmosphere. 🤯✨",
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA_VTCkekPprSCc9GwQfevw6aeXVdqupTkw5_APQlVwVo-0RMyZmMHzWMcUbv1oJSVYvrHq5VPMNTvwSk7eaYc0nXBdBnV1GSGu3rFOMzg9pZ-EQ3F_Bvt8P5ALSCFUhed2T_pPFQelgIKMhkuwhnzJpWnbPpUVQgQmvhBTkDwUIqaN0Y-b8CwSFMxuD-yoPwjfYF7WNyDqaa1KGr2gRrOQoatWCTthX6iYhoMUZuWvOhFbBFmgeI8',
+    likesCount: 245,
+    commentsCount: 42,
+    isLiked: false,
+  },
+  {
+    id: 'prof2',
+    author: currentUser,
+    timeAgo: 'Yesterday',
+    content: "Hot take: Neumorphism is making a comeback, but this time it's exclusively in deep dark mode with neon undertones. Are we ready for it?",
+    poll: {
+      question: 'Neumorphism in deep dark mode with neon undertones?',
+      totalVotes: 100,
+      endsIn: '1 day',
+      options: [
+        { id: 'p_opt1', text: 'Bring it on 🚀', votes: 68 },
+        { id: 'p_opt2', text: 'Leave it in 2020 🛑', votes: 32 },
+      ],
+    },
+    likesCount: 128,
+    commentsCount: 15,
+    isLiked: true,
+  },
+];
+
+export const galleryHighlights: GalleryHighlight[] = [
+  {
+    id: 'h1',
+    title: "Winter Retreat '23",
+    author: 'by Sarah',
+    authorAvatar: allUsers.sarah.avatar,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAzKNSD38RdFMKSXmJ5xlrRkjrbUTMTTijUaGsXvADQU4JDPsagCjyp3sxEhZcjq3QvrmgrT7JTATW4Yh5ZjBnXxd39akr5Sl-InoukweTCSKKppojLVmQD3w1oCB0sdEgoogo6oZX4ZkE5oDAEUUkxKCdaX9HeATjQp2xQxrgr8kmvFrmuxC8D6vZ9Ojri5kg98_A3tFZ7yAVUridOeT3HOHARXC87god-sqyvhe5BHziXxXYaicg',
+  },
+  {
+    id: 'h2',
+    title: 'UI Workshop',
+    author: 'by David',
+    authorAvatar: allUsers.david.avatar,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBUMSGQrHjcsRcNbT3xm7eZAZ8ONJ-a1vrpffqqAqyw-74x9i-WvMNnLNgsaDJhHCW1yattAu6uEp0uN4eekt8Z7PD_X1BMPg7xF5-OIbdZeeGsRIgWyq2jQc-JO0hkxdfdnf_9XZloxSrnmL_f7V40PP_vLIuKlDSeDam9nC6tYmjqPylls0gAsVea_V6IqZQkDZUUDKTiCocDeCa5gQhd1yg0Edyv2NpLITXiru7KpUqPa66rqAA',
+  },
+  {
+    id: 'h3',
+    title: 'Hackathon Nights',
+    author: 'by Alex',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEaPewTonQTYvXfSjJi9bGUcXvNwbmU7WtGIHheYIMQY7DOpGdrvkhsWl69ilURyuFRTzHQEbd64boTlZWtSwhdQCOsy0zFfOl34_tfevwtOkRWFxG7y9YzuzfgVRna2eO305n69lGf92WBdNlsT7ZW8Io489Vi_ic3GFgnNA-fjcCoFaddyBOdfwTGkDk0K_isF7YnrPS1Q4mXd_hCowO4RexVWbp41z_PRt5-bl3lhMEkUVFD5s',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAfFnwQdL5BeVdonZRb0IJlHMDu39NzMpB4d66FtGFNii3wAOVddNhbvPcR91JsVWOFcBVlcY-J95hJLI_Ad4ujM_5LxZlDH9AhsJpTYjG_4wsrqC4p7csvHutUTx4xZS7r6eIEzFTsGWkAeAJqFkoebV3-V4w1vHO9c9-e9lFLxG8SrOQEdZDFwULhV2UMeMxkK7fBoaVGehyKzJ6ofn5H67g7k7D135XXYl_mj99xaDRmht2BV0E',
+  },
+];
+
+export const galleryItems: GalleryItem[] = [
+  {
+    id: 'g1',
+    title: 'Neon Workspace Setup',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAr2QjNkpywtQN7qOP3N-xvpTV0r7NZ1DuOi_EtpkCAcV_ym-DSPf1XVXdFyVjUEUlwcyD7kJ07lK7V6uDLwBDDVtLG_TG0uaPOA5uqXEvRvkHOfVHXSolpt2HVlRuOMKfmq1Q04R9f03nbENZqJEv8s2UHRNwE4ZQbfDI4LwBpCRI3fIdpUaIbnx5GxzegfOWYx2PRoIgaHmfUHI36TdE2YYjOQUikIIV6ut9mXeknDIE2ew-3iXU',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCl_PEWuE1V4-2aDP-mfvk4DUOt4GRLfhap5joUSOPFnhudLJ7V5IjRrAOLSl0WwsBuVxYItcq9JOBnsv5YZ7ootSWKBFe8zqIaUs_6aa1PcXxsZ5y6kJ17DDt1X88AXaa9TEM1Z4pm1wIVAhS30L11mc2pZYFXp7pLkZwf0yIS8jY5bjm7Xl3THqcsob5kiqeXGYenkbUU-aaAQJhEHFufkZfhrcB6tEEuXFt0PdiL02r7snvBP8E',
+    likes: 24,
+    isLiked: true,
+    category: 'Workshops',
+    aspect: 'tall',
+  },
+  {
+    id: 'g2',
+    title: 'Late Night Screen Share',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDYDr0i0ZqVZO1BuSzHiAyA2hFrFhSh0l778I898urYoApUKT-cQ01ynBfNsFZbpWm6eIUBzT900NzLHmfFT6vx63b30NtXPTKH0FBmzYeU0E-Ix33PIIy2eGSFxskRUyBG2Zl_8_ZuO65IkPmbxQ5LSE5C0DhZADzJFRyXnKTqg1LS0IbguHgeDuJj8jiQ0LGVTRCSqhVaYSbqeGlXChQohMEEiH7-HAz9ryupQDE6ebN9O5e2YSI',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAMxWzJfNl-4GXFoXI_8Jv4dTznTXkUAV5qlfExn6BMAJPutF68p7JhfcL2gspHrHajUnw-WMp0gDZMSd_z4Try441QBwWgYr8ufOyHBcHK5sGUamPw6PX8Cas_jIqYqHUffw1ant5R6pYg_PvqLswkeOj3xHSX8pdrnTwYC-7hKSWzVRkrOjtz2HWbmBW-DB7NL0YLq17oUC8mAi9j-L2ruMc7hgq8psvN7OaV6vDlpYywFz-GoX4',
+    likes: 12,
+    isLiked: false,
+    category: 'Events',
+    aspect: 'short',
+  },
+  {
+    id: 'g3',
+    title: 'Moodboard madness',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkgKTgGcJOTvtEE9WiN5BECNB9xY1apqDCMpqD-y-6w-UqbRQ2D-NY3nLgJJ43CD_SJ8twcR1Vwex9oa1nJpe9a3Nrnk0_PnzhwRtCSXDlEoBvrC6jEFglTGwl-0mS3dQUaT3YuayXHR6urhtRsTw9ayIMVRCsQhC5W6YPpukXK-cCnTzC39Iu0jmUuCDE5E-5JoNgM4W-5rU6Yn4xJ4TbJ9j-qgwjLrkya0rV3CmD5jYslZD61j0',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD0KwrEjhIUdNiIAuuKAqUKsRT7-oDIbLePClKTjZIqVUGVAaAIJq9sEX86IM6GRXzUwf8x2icDO5xLO5G8MdaYVZJoXNbfgpDseUso8QroNJBL0XvOHZ5GzwkN8YCsA4jwetG1vzx1OqpWmSe--MQa_vQIENgQSHYFx6P_IWtmyvWVXY14iHHRYdFU1De3ybm4yfA6z7Nxw4aenYrg4htWiLAbKX3bFxXzgdAFp6eXpxfKpPjcDII',
+    likes: 56,
+    comments: 8,
+    isLiked: true,
+    category: 'Vibes',
+    aspect: 'wide',
+  },
+  {
+    id: 'g4',
+    title: 'Stylus Flow & Wireframes',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAGLmwsJGE4qaz7-IU7HoXpABGDtAOgnY5FjeQx-yrQxgGlI7kmWCx5CRpfam7QrspvP-IT7Vs2QXPFpGc89XQj2KTGmV45upRK2XcGA2VNsU6x-Evpwvg6FvchlAtaGMDIiKd-d2gnhJARYYtACPbjIF_DzsByzYLp0p3PJext93CZ28DFRm35XWODH2QRW9x7KEe-ArAXdlgoeekHRjkoe-_ulSuuY66_RuNFVwGO9HMeCE5FJf8',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwFPP7rjAVFVFnBaITusZyb1YzKyOm0BkXrToMUAYa_hp1kvgMW7Gz53_hro9M99nMhuNzqxlV7wv9bRqFGr51yhKEizVmEqIXMkIwPoQqapDtgkH0DfcQllkTd7-ZWPVSJPLze8_xlwjhi52Yg9Vjl_tzpBNMPnSYWI4fMaB5S5BROlIL7ZxP8T6c2wg0xYWjZcAM1o6DdsIp_HQMbepxYfOIeXjuBESATuoU4rwwCkiD0LlTWYw',
+    likes: 31,
+    isLiked: false,
+    category: 'Workshops',
+    aspect: 'short',
+  },
+  {
+    id: 'g5',
+    title: 'CREATE Neon Sign Glow',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAM_3T8Z8_mPurEX-hbyPkU0B2C4DK7GIWY2qjF4om789StN_b2xhMtqeo8sj34mE4J_YJgMaL9sE2khazlkNYqkj8w0M_xBn1FUhnmfMdO1qDn98abav0j9nRcRTKbyDyhDv3IaVlXKijif3JFyE4E9PLCZGRsElgAJwoj1_2ZsYhPgDMDnRIw4j96nQe4n7QeQ2j4-w-vqgU7XXXnXmLodeTMVxc4r-aU3NrVVFLZq0DgVozUhGM',
+    authorAvatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCnwJB_abkxqu4FvsxHqsWdxxi1xkOJp3ZLM6p2tOqK8eG62GM_z5jrdc8i7130QLe1dDUCr7dv1i92a5gsRtDcFOiWDxjIILLQ3h-aeCJPeoW5yb4a2-SDKibpJOo3ZObLIdhbpcU3DlZsUim8FDFuFjIaNmEiAEufYNQS2Qb_-_ofosw1CETwKmVnnpoPeGjpHGtAfXoQjK8zvw94uvfaIzLU2lsTlOmGm-TLVg7KrTuAv_g7CDU',
+    likes: 89,
+    isLiked: true,
+    category: 'Vibes',
+    aspect: 'tall',
+  },
+];
+
+export const initialChatMessages: ChatMessage[] = [
+  {
+    id: 'm1',
+    sender: allUsers.alex,
+    isUser: false,
+    text: 'Hey team, did we finalize the new gradient tokens for the mobile build?',
+    time: '10:24 AM',
+  },
+  {
+    id: 'm2',
+    sender: currentUser,
+    isUser: true,
+    text: "Working on it right now. I'm tweaking the secondary pulse color to be a bit more vibrant.",
+    time: '10:26 AM',
+    status: 'read',
+  },
+  {
+    id: 'm3',
+    sender: allUsers.chloe,
+    isUser: false,
+    text: "Sweet! Don't forget to check the contrast ratios on the disabled states.",
+    time: '10:28 AM',
+    replyTo: {
+      senderName: 'You',
+      text: 'Working on it right now...',
+    },
+  },
+  {
+    id: 'm4',
+    sender: allUsers.alex,
+    isUser: false,
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAsXPWjo8M_jJgn881gWHCmUgauRApULiQgMRgFpKT3Alh55oOeSk9LtIrvLrZfA1uQP4PN7zqvgTRGdYi8bBbY9rID50oB1RqUlwDOPFtvkM5TKFjIBKsGq5WrssV1cd7XMkUgFMG_dP2mvp2JeHo6yBRG86LTM6P27BdtiudjmKjVupB1GkEwTcJXRMIwjpU2jsT1uPvM8w6UPqw4tV2GEZ49xN_EjkukZAVWXq01_4EHEzL_RNY',
+    time: '10:31 AM',
+  },
+  {
+    id: 'm5',
+    sender: currentUser,
+    isUser: true,
+    text: 'Oh that looks incredibly sharp 🔥',
+    time: '10:33 AM',
+    status: 'read',
+  },
+];
+
+export const userCircles: Circle[] = [
+  {
+    id: 'cir1',
+    name: 'Design Squad',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3urL80W5xIQc2ee-_aqWWyEy6ipd8-CAGkwfOw6Tc8iXKmh3KCJs-Iz3e6VsKDVjBuDJcr4CDWWWOeTr8DBQspQNxobUTvrc1jKwMThE2F4ESHxk5H1XFQDKwiYP8tF8MqNICeTiIKBi-CUdmBthzP4UF_j2DYTvwW100ad3mJiPPC_k6pNrEsp0GEdW02gna8kq64FigyvCx-xx3sG8zZYLsECMXTLTE6YeA84viFp9qnNsWDMk',
+    borderColor: 'border-primary/50',
+  },
+  {
+    id: 'cir2',
+    name: 'Night Gamers',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCeVVZS5kz3FqR6RWYISzE-4J6ReaaxZECgujbvDeqAVm9xhyalyEsZlX-B44Z9DN87nglD99ntIMw4cxQGmSPHuevhHx4p6b8inXjXjj3b5vhb2iyS7AxYrxHGq9n1YY_wF-X7cJsG9_IZoWwFLq9bjj0LmRi7J_7I6zJ_Z4fZ65vbOz4x4LeATd1eDZxNGDoKxc1JBlAULON4Bgi0sa4oNlC0m65IIgBR1SLo34v_ndIYkTylOS0',
+    borderColor: 'border-secondary/50',
+  },
+  {
+    id: 'cir3',
+    name: 'Foodie Fam',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW90-mQYeEonH3pRMnQX2v7BxI2hWWmzMfQmTveLavQ9C9Si00ucxz7ZpJxV5MOvzgp3QNLRayncJaaAWRzAyB7qRyg3Go3q52pi69PbbIiyEM_w5fTfhFV0NsmT2t2s4wwsN33AcylQJjl24h8DI1U5z73GKdN8pJ1097f7GsPj9WqlBcuatBCHTr0eNzQ-AuIr__I2om3y9AkkBDTnvO5E0Hyfs-CteTGblUnpU0z-Ntnc3y3RE',
+    borderColor: 'border-tertiary/50',
+  },
+];
